@@ -189,13 +189,16 @@ class MainWindow(QMainWindow):
     def load_graph(self):
         # Загрузка графа из файла
         graph_data = load_from_file(self)
-        if graph_data:
-            try:
-                deserialize_graph(self.canvas, graph_data)
-                self.canvas.update()
-                QMessageBox.information(self, "Загрузка", "Граф успешно загружен.")
-            except json.JSONDecodeError:
-                QMessageBox.critical(self, "Ошибка", "Файл повреждён или содержит неверные данные.")
+        if not graph_data:
+            return  # Выход, если загрузка файла была отменена
+
+        try:
+            deserialize_graph(self.canvas, graph_data)
+            self.canvas.update()  # Обновление сцены для отображения загруженных элементов
+            QMessageBox.information(self, "Загрузка", "Граф успешно загружен.")
+        except json.JSONDecodeError:
+            QMessageBox.critical(self, "Ошибка", "Файл повреждён или содержит неверные данные.")
+
 
     def change_node_color(self):
         # Диалог для изменения цвета узлов

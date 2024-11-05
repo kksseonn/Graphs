@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem
 from PyQt5.QtGui import QBrush, QPen, QColor
-from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtCore import Qt, QPointF, QRectF, QLineF
+from math import atan2, cos, sin
 
 class Canvas(QGraphicsView):
     def __init__(self, parent=None):
@@ -10,46 +11,15 @@ class Canvas(QGraphicsView):
         self.scale_factor = 1.1
         self.mst_edge_color = Qt.blue
         self.shortest_path_color = Qt.green
-        
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
+
         self.nodes = {}
         self.edges = []
-
         self.selected_node = None
         self.offset = QPointF()
 
-    def wheelEvent(self, event):
-        """Handles zooming with the mouse wheel."""
-        scale_factor = self.scale_factor if event.angleDelta().y() > 0 else 1 / self.scale_factor
-        self.scale(scale_factor, scale_factor)
-
-    def mousePressEvent(self, event):
-        """Handles node selection and dragging with the mouse."""
-        item = self.itemAt(event.pos())
-        if isinstance(item, QGraphicsEllipseItem):
-            self.selected_node = item
-            self.offset = self.mapToScene(event.pos()) - item.scenePos()
-            self.select_node(item)
-        else:
-            self.clear_selection()
-        super().mousePressEvent(event)
-
-    def mouseMoveEvent(self, event):
-        """Handles node dragging."""
-        if self.selected_node:
-            new_pos = self.mapToScene(event.pos()) - self.offset
-            self.selected_node.setPos(new_pos)
-            self.update_edges()
-        super().mouseMoveEvent(event)
-
-    def mouseReleaseEvent(self, event):
-        """Resets selection after dragging."""
-        self.selected_node = None
-        super().mouseReleaseEvent(event)
-
     def create_node(self, node_id, label, color="blue"):
-        """Creates a node with the given ID, label, and color."""
         if node_id in self.nodes:
             raise ValueError(f"Node with ID {node_id} already exists.")
         
@@ -63,26 +33,32 @@ class Canvas(QGraphicsView):
         ellipse.setAcceptHoverEvents(True)
         ellipse.setFlag(QGraphicsEllipseItem.ItemIsSelectable)
 
+        # Создание текстовой метки внутри узла, позиционированной по центру
         text = QGraphicsTextItem(label)
-        text.setPos(x + radius / 2, y + radius / 2)
+        text.setParentItem(ellipse)  # Установка метки в качестве дочернего элемента эллипса
+        text.setDefaultTextColor(Qt.black)  # Цвет текста для контраста
+        text.setPos(
+        ellipse.rect().center().x() - text.boundingRect().width() / 2,
+        ellipse.rect().center().y() - text.boundingRect().height() / 2
+        )
 
         self.scene.addItem(ellipse)
-        self.scene.addItem(text)
         self.nodes[node_id] = (ellipse, text)
 
     def create_edge(self, start, end, weight=1):
-        """Creates an edge between the specified start and end nodes with the given weight."""
         start_node = self.nodes.get(start)
         end_node = self.nodes.get(end)
-        if not start_node or not end_node:
-            raise ValueError("Both start and end nodes must exist to create an edge.")
 
-        line = QGraphicsLineItem(
-            start_node[0].rect().center().x() + start_node[0].scenePos().x(),
-            start_node[0].rect().center().y() + start_node[0].scenePos().y(),
-            end_node[0].rect().center().x() + end_node[0].scenePos().x(),
-            end_node[0].rect().center().y() + end_node[0].scenePos().y()
-        )
+        if not start_node or not end_node:
+            raise ValueError("Both nodes must exist to create an edge.")
+
+        if start == end:
+            line = QGraphicsEllipseItem(start_node[0].rect().adjusted(15, 15, -15, -15))
+            line.setPen(QPen(Qt.black, weight))
+        else:
+            line = QGraphicsLineItem()
+            self.update_edge_position(line, start_node, end_node)
+
         line.setData(0, start)
         line.setData(1, end)
         line.setPen(QPen(self.edge_color, weight))
@@ -91,39 +67,79 @@ class Canvas(QGraphicsView):
         self.scene.addItem(line)
         self.edges.append(line)
 
+    def delete_node(self, node_id):
+        if node_id not in self.nodes:
+            return
+        node, label = self.nodes.pop(node_id)
+        self.scene.removeItem(node)
+        for edge in self.edges[:]:
+            if edge.data(0) == node_id or edge.data(1) == node_id:
+                self.edges.remove(edge)
+                self.scene.removeItem(edge)
+
+    def delete_edge(self, start, end):
+        for edge in self.edges[:]:
+            if {edge.data(0), edge.data(1)} == {start, end}:
+                self.edges.remove(edge)
+                self.scene.removeItem(edge)
+                break
+
+    def update_edge_position(self, edge, start_node, end_node):
+        if isinstance(edge, QGraphicsLineItem):
+            edge.setLine(
+                start_node[0].rect().center().x() + start_node[0].scenePos().x(),
+                start_node[0].rect().center().y() + start_node[0].scenePos().y(),
+                end_node[0].rect().center().x() + end_node[0].scenePos().x(),
+                end_node[0].rect().center().y() + end_node[0].scenePos().y()
+            )
+
+    def update_edges(self):
+        for edge in self.edges:
+            start_id = edge.data(0)
+            end_id = edge.data(1)
+            start_node = self.nodes.get(start_id)
+            end_node = self.nodes.get(end_id)
+            if start_node and end_node:
+                self.update_edge_position(edge, start_node, end_node)
+
+    def mousePressEvent(self, event):
+        item = self.itemAt(event.pos())
+        if isinstance(item, QGraphicsEllipseItem):
+            self.selected_node = item
+            self.offset = self.mapToScene(event.pos()) - item.scenePos()
+            self.select_node(item)
+        else:
+            self.clear_selection()
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self.selected_node:
+            new_pos = self.mapToScene(event.pos()) - self.offset
+            self.selected_node.setPos(new_pos)
+            self.update_edges()
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self.selected_node = None
+        super().mouseReleaseEvent(event)
+
     def select_node(self, node_item):
-        """Highlights the selected node."""
         for node, (ellipse, _) in self.nodes.items():
-            ellipse.setPen(QPen(Qt.red, 2) if ellipse == node_item else QPen(Qt.black, 1))
+            if ellipse == node_item:
+                ellipse.setPen(QPen(Qt.red, 2))
+            else:
+                ellipse.setPen(QPen(Qt.black, 1))
 
     def clear_selection(self):
-        """Removes selection from all nodes and edges."""
         for node, (ellipse, _) in self.nodes.items():
             ellipse.setPen(QPen(Qt.black, 1))
         for edge in self.edges:
-            edge.setPen(QPen(self.edge_color, edge.pen().width()))
+            edge.setPen(QPen(Qt.black, edge.pen().width()))
 
-    def update_edges(self):
-        """Updates the positions of edges connected to nodes."""
-        for edge in self.edges:
-            start_id, end_id = edge.data(0), edge.data(1)
-            start_node, end_node = self.nodes.get(start_id), self.nodes.get(end_id)
-            if start_node and end_node:
-                edge.setLine(
-                    start_node[0].rect().center().x() + start_node[0].scenePos().x(),
-                    start_node[0].rect().center().y() + start_node[0].scenePos().y(),
-                    end_node[0].rect().center().x() + end_node[0].scenePos().x(),
-                    end_node[0].rect().center().y() + end_node[0].scenePos().y()
-                )
-
-    def set_node_color(self, color):
-        """Sets the color of all nodes on the canvas."""
-        self.node_color = color
-        for node_id, (ellipse, _) in self.nodes.items():
-            ellipse.setBrush(QBrush(self.node_color))
-
-    def set_edge_color(self, color):
-        """Sets the color of all edges on the canvas."""
-        self.edge_color = color
-        for edge in self.edges:
-            edge.setPen(QPen(self.edge_color, edge.pen().width()))
+    
+    def clear_graph(self):
+        """Удаляет все узлы и рёбра с холста."""
+        for node_id in list(self.nodes.keys()):
+            self.delete_node(node_id)
+        self.edges.clear()  # Очищает список рёбер
+        self.update()  # Обновляет отображение холста

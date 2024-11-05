@@ -1,7 +1,6 @@
 # core/algorithms.py
 
 import heapq
-from collections import defaultdict
 
 def dijkstra(graph, start):
     """Поиск кратчайшего пути от узла start до всех остальных узлов графа."""
