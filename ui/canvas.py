@@ -5,73 +5,27 @@ from PyQt5.QtCore import Qt, QPointF
 class Canvas(QGraphicsView):
     def __init__(self, parent=None):
         super().__init__(parent)
-
-        # Инициализация сцены и основных параметров
+        self.node_color = Qt.gray
+        self.edge_color = Qt.black
+        self.scale_factor = 1.1
+        self.mst_edge_color = Qt.blue
+        self.shortest_path_color = Qt.green
+        
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
+        self.nodes = {}
+        self.edges = []
 
-        # Настройка графов
-        self.nodes = {}  # Словарь для хранения узлов
-        self.edges = []  # Список для хранения рёбер
-
-        # Переменные для перетаскивания узлов
         self.selected_node = None
         self.offset = QPointF()
 
-    def create_node(self, node_id, label, color="blue"):
-        """Создаёт узел с заданными параметрами."""
-        if node_id in self.nodes:
-            raise ValueError(f"Узел с идентификатором {node_id} уже существует.")
-
-        # Создание узла в виде эллипса
-        radius = 20
-        x, y = 50 * len(self.nodes), 50  # Расположение узлов для начала
-
-        ellipse = QGraphicsEllipseItem(x, y, radius * 2, radius * 2)
-        ellipse.setBrush(QBrush(QColor(color)))
-        ellipse.setFlag(QGraphicsEllipseItem.ItemIsMovable)  # Разрешаем перемещение
-
-        # Установка действия на щелчок
-        ellipse.setData(0, node_id)  # Сохранение ID узла для обработки событий
-        ellipse.setAcceptHoverEvents(True)
-        ellipse.setFlag(QGraphicsEllipseItem.ItemIsSelectable)  # Выделение узла
-
-        # Создание текстовой метки
-        text = QGraphicsTextItem(label)
-        text.setPos(x + radius / 2, y + radius / 2)
-
-        # Добавление элементов на сцену
-        self.scene.addItem(ellipse)
-        self.scene.addItem(text)
-
-        # Добавление узла в словарь
-        self.nodes[node_id] = (ellipse, text)
-
-    def create_edge(self, start, end, weight=1):
-        """Создаёт ребро между узлами start и end с заданным весом."""
-        start_node = self.nodes.get(start)
-        end_node = self.nodes.get(end)
-
-        if not start_node or not end_node:
-            raise ValueError("Указанные узлы должны существовать для добавления ребра.")
-
-        # Создание линии между узлами
-        line = QGraphicsLineItem(
-            start_node[0].rect().center().x() + start_node[0].scenePos().x(),
-            start_node[0].rect().center().y() + start_node[0].scenePos().y(),
-            end_node[0].rect().center().x() + end_node[0].scenePos().x(),
-            end_node[0].rect().center().y() + end_node[0].scenePos().y()
-        )
-        pen = QPen(Qt.black, weight)  # Толщина линии соответствует весу
-        line.setPen(pen)
-        line.setFlag(QGraphicsLineItem.ItemIsSelectable)
-
-        # Добавление линии на сцену
-        self.scene.addItem(line)
-        self.edges.append(line)
+    def wheelEvent(self, event):
+        """Handles zooming with the mouse wheel."""
+        scale_factor = self.scale_factor if event.angleDelta().y() > 0 else 1 / self.scale_factor
+        self.scale(scale_factor, scale_factor)
 
     def mousePressEvent(self, event):
-        """Обрабатывает событие нажатия мыши."""
+        """Handles node selection and dragging with the mouse."""
         item = self.itemAt(event.pos())
         if isinstance(item, QGraphicsEllipseItem):
             self.selected_node = item
@@ -82,7 +36,7 @@ class Canvas(QGraphicsView):
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        """Обрабатывает событие перемещения мыши для перетаскивания узлов."""
+        """Handles node dragging."""
         if self.selected_node:
             new_pos = self.mapToScene(event.pos()) - self.offset
             self.selected_node.setPos(new_pos)
@@ -90,32 +44,70 @@ class Canvas(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        """Сбрасывает выбор узла при отпускании кнопки мыши."""
+        """Resets selection after dragging."""
         self.selected_node = None
         super().mouseReleaseEvent(event)
 
+    def create_node(self, node_id, label, color="blue"):
+        """Creates a node with the given ID, label, and color."""
+        if node_id in self.nodes:
+            raise ValueError(f"Node with ID {node_id} already exists.")
+        
+        radius = 20
+        x, y = 50 * len(self.nodes), 50
+
+        ellipse = QGraphicsEllipseItem(x, y, radius * 2, radius * 2)
+        ellipse.setBrush(QBrush(QColor(color)))
+        ellipse.setFlag(QGraphicsEllipseItem.ItemIsMovable)
+        ellipse.setData(0, node_id)
+        ellipse.setAcceptHoverEvents(True)
+        ellipse.setFlag(QGraphicsEllipseItem.ItemIsSelectable)
+
+        text = QGraphicsTextItem(label)
+        text.setPos(x + radius / 2, y + radius / 2)
+
+        self.scene.addItem(ellipse)
+        self.scene.addItem(text)
+        self.nodes[node_id] = (ellipse, text)
+
+    def create_edge(self, start, end, weight=1):
+        """Creates an edge between the specified start and end nodes with the given weight."""
+        start_node = self.nodes.get(start)
+        end_node = self.nodes.get(end)
+        if not start_node or not end_node:
+            raise ValueError("Both start and end nodes must exist to create an edge.")
+
+        line = QGraphicsLineItem(
+            start_node[0].rect().center().x() + start_node[0].scenePos().x(),
+            start_node[0].rect().center().y() + start_node[0].scenePos().y(),
+            end_node[0].rect().center().x() + end_node[0].scenePos().x(),
+            end_node[0].rect().center().y() + end_node[0].scenePos().y()
+        )
+        line.setData(0, start)
+        line.setData(1, end)
+        line.setPen(QPen(self.edge_color, weight))
+        line.setFlag(QGraphicsLineItem.ItemIsSelectable)
+
+        self.scene.addItem(line)
+        self.edges.append(line)
+
     def select_node(self, node_item):
-        """Выделяет выбранный узел изменением цвета рамки."""
+        """Highlights the selected node."""
         for node, (ellipse, _) in self.nodes.items():
-            if ellipse == node_item:
-                ellipse.setPen(QPen(Qt.red, 2))  # Выделение красным цветом
-            else:
-                ellipse.setPen(QPen(Qt.black, 1))
+            ellipse.setPen(QPen(Qt.red, 2) if ellipse == node_item else QPen(Qt.black, 1))
 
     def clear_selection(self):
-        """Снимает выделение со всех узлов и рёбер."""
+        """Removes selection from all nodes and edges."""
         for node, (ellipse, _) in self.nodes.items():
             ellipse.setPen(QPen(Qt.black, 1))
         for edge in self.edges:
-            edge.setPen(QPen(Qt.black, edge.pen().width()))
+            edge.setPen(QPen(self.edge_color, edge.pen().width()))
 
     def update_edges(self):
-        """Обновляет положение рёбер при перемещении узлов."""
+        """Updates the positions of edges connected to nodes."""
         for edge in self.edges:
-            start_id = edge.data(0)
-            end_id = edge.data(1)
-            start_node = self.nodes.get(start_id)
-            end_node = self.nodes.get(end_id)
+            start_id, end_id = edge.data(0), edge.data(1)
+            start_node, end_node = self.nodes.get(start_id), self.nodes.get(end_id)
             if start_node and end_node:
                 edge.setLine(
                     start_node[0].rect().center().x() + start_node[0].scenePos().x(),
@@ -123,17 +115,15 @@ class Canvas(QGraphicsView):
                     end_node[0].rect().center().x() + end_node[0].scenePos().x(),
                     end_node[0].rect().center().y() + end_node[0].scenePos().y()
                 )
-    def highlight_shortest_paths(self, distances):
-            """Подсвечивает узлы и рёбра, которые лежат на кратчайших путях."""
-            for node, distance in distances.items():
-                if distance < float('inf'):
-                    self.nodes[node][0].setBrush(QBrush(Qt.green))  # Подсветка узлов
 
-            # Здесь можно добавить подсветку рёбер, используя данные о предыдущих узлах
+    def set_node_color(self, color):
+        """Sets the color of all nodes on the canvas."""
+        self.node_color = color
+        for node_id, (ellipse, _) in self.nodes.items():
+            ellipse.setBrush(QBrush(self.node_color))
 
-    def highlight_mst(self, mst_edges):
-        """Подсвечивает рёбра, которые входят в минимальное остовное дерево."""
-        for start, end, weight in mst_edges:
-            for edge in self.edges:
-                if {edge.data(0), edge.data(1)} == {start, end}:
-                    edge.setPen(QPen(Qt.blue, 2))  # Подсветка рёбер в МОД
+    def set_edge_color(self, color):
+        """Sets the color of all edges on the canvas."""
+        self.edge_color = color
+        for edge in self.edges:
+            edge.setPen(QPen(self.edge_color, edge.pen().width()))
