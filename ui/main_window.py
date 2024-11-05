@@ -1,114 +1,6 @@
-# # ui/main_window.py
-
-# from PyQt5.QtWidgets import QMainWindow, QMenuBar, QToolBar, QAction, QVBoxLayout, QWidget
-# from ui.canvas import Canvas
-
-# from PyQt5.QtWidgets import QMessageBox
-# from ui.input_dialogs import NodeDialog, EdgeDialog
-
-# class MainWindow(QMainWindow):
-#     def __init__(self):
-#         super().__init__()
-
-#         self.setWindowTitle("Графовое приложение")
-#         self.setGeometry(100, 100, 800, 600)
-
-#         # Создаём основной виджет и макет
-#         self.central_widget = QWidget()
-#         self.setCentralWidget(self.central_widget)
-#         self.layout = QVBoxLayout()
-#         self.central_widget.setLayout(self.layout)
-
-#         # Инициализируем Canvas для отображения графа
-#         self.canvas = Canvas()
-#         self.layout.addWidget(self.canvas)
-
-#         # Создаём меню и панель инструментов
-#         self.create_menu()
-#         self.create_toolbar()
-
-#     def create_menu(self):
-#         # Создаем меню и добавляем действия
-#         menubar = self.menuBar()
-
-#         # Меню "Файл"
-#         file_menu = menubar.addMenu("Файл")
-#         save_action = QAction("Сохранить", self)
-#         load_action = QAction("Загрузить", self)
-#         file_menu.addAction(save_action)
-#         file_menu.addAction(load_action)
-
-#         # Меню "Правка"
-#         edit_menu = menubar.addMenu("Правка")
-#         add_node_action = QAction("Добавить узел", self)
-#         remove_node_action = QAction("Удалить узел", self)
-#         add_edge_action = QAction("Добавить ребро", self)
-#         remove_edge_action = QAction("Удалить ребро", self)
-#         edit_menu.addAction(add_node_action)
-#         edit_menu.addAction(remove_node_action)
-#         edit_menu.addAction(add_edge_action)
-#         edit_menu.addAction(remove_edge_action)
-
-#         # Подключаем действия к методам
-#         add_node_action.triggered.connect(self.canvas.add_node)
-#         remove_node_action.triggered.connect(self.canvas.remove_node)
-#         add_edge_action.triggered.connect(self.canvas.add_edge)
-#         remove_edge_action.triggered.connect(self.canvas.remove_edge)
-
-#     def create_toolbar(self):
-#         # Создаём панель инструментов
-#         toolbar = QToolBar("Панель инструментов")
-#         self.addToolBar(toolbar)
-
-#         # Добавляем кнопки на панель инструментов
-#         add_node_action = QAction("Добавить узел", self)
-#         remove_node_action = QAction("Удалить узел", self)
-#         add_edge_action = QAction("Добавить ребро", self)
-#         remove_edge_action = QAction("Удалить ребро", self)
-
-#         toolbar.addAction(add_node_action)
-#         toolbar.addAction(remove_node_action)
-#         toolbar.addAction(add_edge_action)
-#         toolbar.addAction(remove_edge_action)
-
-#         # Подключаем действия к методам
-#         add_node_action.triggered.connect(self.canvas.add_node)
-#         remove_node_action.triggered.connect(self.canvas.remove_node)
-#         add_edge_action.triggered.connect(self.canvas.add_edge)
-#         remove_edge_action.triggered.connect(self.canvas.remove_edge)
-
-#     def add_node(self):
-#         # Открытие диалога для добавления узла
-#         dialog = NodeDialog(self)
-#         if dialog.exec_() == QDialog.Accepted:
-#             node_data = dialog.get_data()
-#             try:
-#                 # Передача данных в Canvas
-#                 self.canvas.create_node(node_data["id"], node_data["label"], node_data["color"])
-#             except ValueError as e:
-#                 # Отображение ошибки, если ID узла уже существует
-#                 QMessageBox.warning(self, "Ошибка", str(e))
-
-#     def add_edge(self):
-#         # Открытие диалога для добавления ребра
-#         node_ids = list(self.canvas.nodes.keys())
-#         if not node_ids:
-#             QMessageBox.warning(self, "Ошибка", "Сначала добавьте хотя бы два узла.")
-#             return
-
-#         dialog = EdgeDialog(node_ids, self)
-#         if dialog.exec_() == QDialog.Accepted:
-#             edge_data = dialog.get_data()
-#             try:
-#                 # Передача данных в Canvas
-#                 self.canvas.create_edge(edge_data["start"], edge_data["end"], edge_data["weight"])
-#             except ValueError as e:
-#                 # Отображение ошибки, если что-то пошло не так
-#                 QMessageBox.warning(self, "Ошибка", str(e))
-
 # ui/main_window.py
 
-from PyQt5.QtWidgets import QMainWindow, QMenuBar, QToolBar, QAction, QGraphicsView, QMessageBox, QDialog
+from PyQt5.QtWidgets import QMainWindow, QMenuBar, QToolBar, QAction, QGraphicsView, QMessageBox, QDialog, QInputDialog
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 from ui.canvas import Canvas
@@ -164,14 +56,21 @@ class MainWindow(QMainWindow):
         file_menu.addAction(load_action)
         # Меню "Правка" с добавлением узлов и рёбер
         edit_menu = menu_bar.addMenu("Правка")
+
         add_node_action = QAction("Добавить узел", self)
         add_node_action.triggered.connect(self.add_node)
         edit_menu.addAction(add_node_action)
 
+        remove_node_action = QAction("Удалить узел", self)
+        edit_menu.addAction(remove_node_action)
+        remove_node_action.triggered.connect(self.remove_node)
+
         add_edge_action = QAction("Добавить ребро", self)
         add_edge_action.triggered.connect(self.add_edge)
         edit_menu.addAction(add_edge_action)
-
+        remove_edge_action = QAction("Удалить ребро", self)
+        edit_menu.addAction(remove_edge_action)
+        remove_edge_action.triggered.connect(self.remove_edge)
         # Установка строки меню
         self.setMenuBar(menu_bar)
 
@@ -185,10 +84,21 @@ class MainWindow(QMainWindow):
         add_node_action.triggered.connect(self.add_node)
         tool_bar.addAction(add_node_action)
 
+        # Кнопка "Удалить узел"
+        remove_node_action = QAction("Удалить узел", self)
+        remove_node_action.triggered.connect(self.remove_node)
+        tool_bar.addAction(remove_node_action)
+
         # Кнопка "Добавить ребро"
         add_edge_action = QAction(QIcon(), "Добавить ребро", self)
         add_edge_action.triggered.connect(self.add_edge)
         tool_bar.addAction(add_edge_action)
+
+        # Кнопка "Удалить ребро"
+        remove_edge_action = QAction("Удалить ребро", self)
+        remove_edge_action.triggered.connect(self.remove_edge)
+        tool_bar.addAction(remove_edge_action)
+
 
     def add_node(self):
         # Открытие диалога для добавления узла
@@ -201,6 +111,9 @@ class MainWindow(QMainWindow):
             except ValueError as e:
                 # Отображение ошибки, если ID узла уже существует
                 QMessageBox.warning(self, "Ошибка", str(e))
+    def remove_node(self)
+        
+    def remove_edge(self)
 
     def add_edge(self):
         # Открытие диалога для добавления ребра
