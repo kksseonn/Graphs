@@ -1,8 +1,11 @@
 # ui/input_dialogs.py
 
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QColorDialog, QSpinBox, QComboBox
+from PyQt5.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, 
+    QColorDialog, QSpinBox, QComboBox
+)
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QColorDialog
+
 class NodeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -40,17 +43,17 @@ class NodeDialog(QDialog):
         self.setLayout(layout)
 
     def select_color(self):
-        # Открываем диалог выбора цвета
+        """Открывает диалог выбора цвета и обновляет стиль кнопки цвета."""
         color = QColorDialog.getColor()
         if color.isValid():
             self.color = color.name()
             self.color_button.setStyleSheet(f"background-color: {self.color}")
 
     def get_data(self):
-        # Получаем данные для передачи в основной интерфейс
+        """Возвращает данные из полей формы."""
         return {
-            "id": self.id_input.text(),
-            "label": self.label_input.text(),
+            "id": self.id_input.text().strip(),
+            "label": self.label_input.text().strip(),
             "color": self.color,
         }
 
@@ -92,9 +95,9 @@ class EdgeDialog(QDialog):
         self.setLayout(layout)
 
     def get_data(self):
-        # Получаем данные для передачи в основной интерфейс
+        """Возвращает данные из полей формы."""
         return {
-            "start": self.start_node.currentText(),
-            "end": self.end_node.currentText(),
+            "start": self.start_node.currentText().strip(),
+            "end": self.end_node.currentText().strip(),
             "weight": self.weight_input.value(),
         }

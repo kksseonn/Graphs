@@ -1,16 +1,24 @@
 # ui/main_window.py
 
-from PyQt5.QtWidgets import QMainWindow, QMenuBar, QToolBar, QAction, QGraphicsView, QMessageBox, QDialog, QInputDialog, QColorDialog
+import json
+from PyQt5.QtWidgets import (
+    QMainWindow, QMenuBar, QToolBar, QAction, QGraphicsView, 
+    QMessageBox, QDialog, QInputDialog, QColorDialog
+)
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
+
 from ui.canvas import Canvas
 from ui.input_dialogs import NodeDialog, EdgeDialog
 from core.algorithms import dijkstra, prim_mst, kamada_kawai_layout
 from core.data_storage import serialize_graph, deserialize_graph
 from utils.file_operations import save_to_file, load_from_file
-import json
 
 class MainWindow(QMainWindow):
+    """
+    Главное окно приложения для работы с графами.
+    """
+
     def __init__(self):
         super().__init__()
 
@@ -27,132 +35,93 @@ class MainWindow(QMainWindow):
         self.create_tool_bar()
 
     def create_menu_bar(self):
-        # Создание строки меню
+        """
+        Создаёт строку меню с основными функциями.
+        """
         menu_bar = QMenuBar(self)
 
         # Меню "Файл"
         file_menu = menu_bar.addMenu("Файл")
-        exit_action = QAction("Выход", self)
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-
-        # Добавление опции "Сохранить"
-        save_action = QAction("Сохранить", self)
-        save_action.triggered.connect(self.save_graph)
-        file_menu.addAction(save_action)
-
-        # Добавление опции "Загрузить"
-        load_action = QAction("Загрузить", self)
-        load_action.triggered.connect(self.load_graph)
-        file_menu.addAction(load_action)
+        file_menu.addAction(self.create_action("Выход", self.close))
+        file_menu.addAction(self.create_action("Сохранить", self.save_graph))
+        file_menu.addAction(self.create_action("Загрузить", self.load_graph))
 
         # Меню "Алгоритмы"
         algorithms_menu = menu_bar.addMenu("Алгоритмы")
-        
-        # Алгоритм Дейкстры
-        dijkstra_action = QAction("Поиск кратчайшего пути", self)
-        dijkstra_action.triggered.connect(self.run_dijkstra)
-        algorithms_menu.addAction(dijkstra_action)
+        algorithms_menu.addAction(self.create_action("Поиск кратчайшего пути", self.run_dijkstra))
+        algorithms_menu.addAction(self.create_action("Минимальное остовное дерево", self.run_prim))
+        algorithms_menu.addAction(self.create_action("Расположение Камада-Кавай", self.run_kamada_kawai))
 
-        # Алгоритм Прима
-        prim_action = QAction("Минимальное остовное дерево", self)
-        prim_action.triggered.connect(self.run_prim)
-        algorithms_menu.addAction(prim_action)
-
-         # Добавить "Камада-Кавай"
-        kamada_kawai_action = QAction("Расположение Камада-Кавай", self)
-        kamada_kawai_action.triggered.connect(self.run_kamada_kawai)
-        algorithms_menu.addAction(kamada_kawai_action)
-
-        # Меню "Правка" с добавлением узлов и рёбер
+        # Меню "Правка"
         edit_menu = menu_bar.addMenu("Правка")
-
-        add_node_action = QAction("Добавить узел", self)
-        add_node_action.triggered.connect(self.add_node)
-        edit_menu.addAction(add_node_action)
-
-        remove_node_action = QAction("Удалить узел", self)
-        remove_node_action.triggered.connect(self.remove_node)
-        edit_menu.addAction(remove_node_action)
-
-        add_edge_action = QAction("Добавить ребро", self)
-        add_edge_action.triggered.connect(self.add_edge)
-        edit_menu.addAction(add_edge_action)
-
-        remove_edge_action = QAction("Удалить ребро", self)
-        remove_edge_action.triggered.connect(self.remove_edge)
-        edit_menu.addAction(remove_edge_action)
-
-        # Добавить пункт "Матрица весов"
-        add_matrix_action = QAction("Добавить граф по матрице весов", self)
-        add_matrix_action.triggered.connect(self.add_graph_from_matrix)
-        edit_menu.addAction(add_matrix_action)
+        edit_menu.addAction(self.create_action("Добавить узел", self.add_node))
+        edit_menu.addAction(self.create_action("Удалить узел", self.remove_node))
+        edit_menu.addAction(self.create_action("Добавить ребро", self.add_edge))
+        edit_menu.addAction(self.create_action("Удалить ребро", self.remove_edge))
+        edit_menu.addAction(self.create_action("Добавить граф по матрице весов", self.add_graph_from_matrix))
+        edit_menu.addAction(self.create_action("Добавить граф по матрице смежности", self.add_graph_from_matrix))
 
         # Меню "Настройки"
         settings_menu = menu_bar.addMenu("Настройки")
+        settings_menu.addAction(self.create_action("Цвет узлов", self.change_node_color))
+        settings_menu.addAction(self.create_action("Цвет рёбер", self.change_edge_color))
 
-        # Настройка цвета узлов
-        node_color_action = QAction("Цвет узлов", self)
-        node_color_action.triggered.connect(self.change_node_color)
-        settings_menu.addAction(node_color_action)
-
-        # Настройка цвета рёбер
-        edge_color_action = QAction("Цвет рёбер", self)
-        edge_color_action.triggered.connect(self.change_edge_color)
-        settings_menu.addAction(edge_color_action)
-
-        # Установка строки меню
         self.setMenuBar(menu_bar)
 
     def create_tool_bar(self):
-        # Создание панели инструментов
+        """
+        Создаёт панель инструментов для быстрого доступа к функциям.
+        """
         tool_bar = QToolBar("Инструменты", self)
         self.addToolBar(Qt.TopToolBarArea, tool_bar)
 
-        # Кнопка "Добавить узел"
-        add_node_action = QAction(QIcon(), "Добавить узел", self)
-        add_node_action.triggered.connect(self.add_node)
-        tool_bar.addAction(add_node_action)
+        tool_bar.addAction(self.create_action("Добавить узел", self.add_node))
+        tool_bar.addAction(self.create_action("Удалить узел", self.remove_node))
+        tool_bar.addAction(self.create_action("Добавить ребро", self.add_edge))
+        tool_bar.addAction(self.create_action("Удалить ребро", self.remove_edge))
 
-        # Кнопка "Удалить узел"
-        remove_node_action = QAction("Удалить узел", self)
-        remove_node_action.triggered.connect(self.remove_node)
-        tool_bar.addAction(remove_node_action)
+    def create_action(self, name, callback):
+        """
+        Вспомогательный метод для создания QAction.
 
-        # Кнопка "Добавить ребро"
-        add_edge_action = QAction(QIcon(), "Добавить ребро", self)
-        add_edge_action.triggered.connect(self.add_edge)
-        tool_bar.addAction(add_edge_action)
+        Args:
+            name (str): Название действия.
+            callback (callable): Функция, вызываемая при активации действия.
 
-        # Кнопка "Удалить ребро"
-        remove_edge_action = QAction("Удалить ребро", self)
-        remove_edge_action.triggered.connect(self.remove_edge)
-        tool_bar.addAction(remove_edge_action)
+        Returns:
+            QAction: Созданное действие.
+        """
+        action = QAction(name, self)
+        action.triggered.connect(callback)
+        return action
 
     def add_node(self):
-        # Открытие диалога для добавления узла
+        """
+        Открывает диалог для добавления нового узла.
+        """
         dialog = NodeDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             node_data = dialog.get_data()
             try:
-                # Добавление узла на холст
                 self.canvas.create_node(node_data["id"], node_data["label"], node_data["color"])
             except ValueError as e:
-                # Отображение ошибки, если ID узла уже существует
                 QMessageBox.warning(self, "Ошибка", str(e))
 
     def remove_node(self):
-        # Открытие диалога для удаления узла
+        """
+        Удаляет узел с заданным ID после подтверждения.
+        """
         node_id, ok = QInputDialog.getText(self, "Удаление узла", "Введите ID узла для удаления:")
         if ok:
             try:
-                # Удаление узла с холста
                 self.canvas.delete_node(node_id)
             except ValueError as e:
                 QMessageBox.warning(self, "Ошибка", str(e))
 
     def add_edge(self):
-        # Открытие диалога для добавления ребра
+        """
+        Открывает диалог для добавления нового ребра между существующими узлами.
+        """
         node_ids = list(self.canvas.nodes.keys())
         if not node_ids:
             QMessageBox.warning(self, "Ошибка", "Сначала добавьте хотя бы два узла.")
@@ -162,25 +131,27 @@ class MainWindow(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             edge_data = dialog.get_data()
             try:
-                # Добавление ребра на холст
                 self.canvas.create_edge(edge_data["start"], edge_data["end"], edge_data["weight"])
             except ValueError as e:
                 QMessageBox.warning(self, "Ошибка", str(e))
 
     def remove_edge(self):
-        # Открытие диалога для удаления ребра
+        """
+        Удаляет ребро между двумя узлами после подтверждения.
+        """
         start, ok1 = QInputDialog.getText(self, "Удаление ребра", "Введите ID начального узла:")
         if ok1:
             end, ok2 = QInputDialog.getText(self, "Удаление ребра", "Введите ID конечного узла:")
             if ok2:
                 try:
-                    # Удаление ребра с холста
                     self.canvas.delete_edge(start, end)
                 except ValueError as e:
                     QMessageBox.warning(self, "Ошибка", str(e))
 
     def add_graph_from_matrix(self):
-        # Диалог для ввода матрицы весов
+        """
+        Создаёт граф на основе введённой матрицы весов.
+        """
         text, ok = QInputDialog.getMultiLineText(
             self,
             "Матрица весов",
@@ -190,28 +161,22 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            # Преобразование текста в матрицу
             matrix = [
                 list(map(float, row.split()))
                 for row in text.strip().split("\n")
             ]
-
-            # Проверка корректности матрицы
             size = len(matrix)
             if not all(len(row) == size for row in matrix):
                 raise ValueError("Матрица должна быть квадратной.")
 
-            # Очистка текущего графа
             self.canvas.clear_graph()
 
-            # Создание узлов
             for i in range(size):
-                self.canvas.create_node(str(i), f"Узел {i}", "#ADD8E6")  # Светло-голубой
+                self.canvas.create_node(str(i), f"Узел {i}", "#ADD8E6")
 
-            # Создание рёбер
             for i in range(size):
                 for j in range(size):
-                    if matrix[i][j] != 0 and i != j:  # Если вес не равен нулю и это не петля
+                    if matrix[i][j] != 0 and i != j:
                         self.canvas.create_edge(str(i), str(j), matrix[i][j])
 
             QMessageBox.information(self, "Матрица весов", "Граф успешно создан.")
@@ -219,14 +184,18 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Ошибка", f"Некорректный ввод матрицы: {e}")
 
     def run_dijkstra(self):
-        # Диалог для запуска алгоритма Дейкстры
+        """
+        Запускает алгоритм Дейкстры для поиска кратчайших путей.
+        """
         start_node, ok = QInputDialog.getText(self, "Алгоритм Дейкстры", "Введите начальный узел:")
         if ok and start_node in self.canvas.nodes:
             distances, _ = dijkstra(self.canvas, start_node)
             self.canvas.highlight_shortest_paths(distances)
 
     def run_prim(self):
-        # Запуск алгоритма Прима
+        """
+        Запускает алгоритм Прима для построения минимального остовного дерева.
+        """
         mst_edges = prim_mst(self.canvas)
         self.canvas.highlight_mst(mst_edges)
 
