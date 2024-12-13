@@ -66,6 +66,8 @@ class Graph:
         del self.edges[(start, end)]
         print(f"Ребро {start} -> {end} удалено.")
 
+    
+
 if __name__ == "__main__":
     graph = Graph()
     

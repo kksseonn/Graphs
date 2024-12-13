@@ -1,6 +1,8 @@
 # core/algorithms.py
 
 import heapq
+import numpy as np
+import networkx as nx
 
 def dijkstra(graph, start):
     """Поиск кратчайшего пути от узла start до всех остальных узлов графа."""
@@ -46,3 +48,31 @@ def prim_mst(graph):
                     heapq.heappush(edges, (to_weight, end, to_neighbor))
 
     return mst  # Возвращаем рёбра МОДа
+
+
+def kamada_kawai_layout(graph):
+    """
+    Реализация алгоритма Камада-Кавай для расположения узлов графа.
+
+    :param graph: Экземпляр графа, содержащий узлы и рёбра.
+    :return: Словарь с координатами узлов.
+    """
+    # Создание NetworkX графа из текущего графа
+    nx_graph = nx.Graph()
+    for node_id, node_data in graph.nodes.items():
+        nx_graph.add_node(node_id)
+    for edge in graph.edges.values():
+        nx_graph.add_edge(edge.start, edge.end, weight=edge.weight)
+
+    # Вычисление позиций узлов с помощью алгоритма Камада-Кавай
+    positions = nx.kamada_kawai_layout(nx_graph)
+
+    # Установка новых позиций для узлов
+    for node_id, pos in positions.items():
+        graphic_node = graph.nodes[node_id]  # Получение графического объекта узла
+        if hasattr(graphic_node, "setPos"):
+            graphic_node.setPos(pos[0] * 100, pos[1] * 100)  # Масштабирование для удобства
+        else:
+            raise ValueError(f"Узел {node_id} не поддерживает метод setPos")
+
+    return positions

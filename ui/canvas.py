@@ -1,3 +1,4 @@
+# ui/canvas.py
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem
 from PyQt5.QtGui import QBrush, QPen, QColor
 from PyQt5.QtCore import Qt, QPointF, QRectF, QLineF
@@ -143,3 +144,14 @@ class Canvas(QGraphicsView):
             self.delete_node(node_id)
         self.edges.clear()  # Очищает список рёбер
         self.update()  # Обновляет отображение холста
+        
+    def move_node(self, node_id, x, y):
+        """
+        Перемещает узел на указанные координаты.
+        :param node_id: ID узла
+        :param x: Новая координата X
+        :param y: Новая координата Y
+        """
+        if node_id in self.nodes:
+            node_item = self.nodes[node_id]
+            node_item.setPos(x, y)

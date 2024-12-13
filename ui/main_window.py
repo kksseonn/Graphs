@@ -5,7 +5,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import Qt
 from ui.canvas import Canvas
 from ui.input_dialogs import NodeDialog, EdgeDialog
-from core.algorithms import dijkstra, prim_mst
+from core.algorithms import dijkstra, prim_mst, kamada_kawai_layout
 from core.data_storage import serialize_graph, deserialize_graph
 from utils.file_operations import save_to_file, load_from_file
 import json
@@ -59,6 +59,11 @@ class MainWindow(QMainWindow):
         prim_action.triggered.connect(self.run_prim)
         algorithms_menu.addAction(prim_action)
 
+         # Добавить "Камада-Кавай"
+        kamada_kawai_action = QAction("Расположение Камада-Кавай", self)
+        kamada_kawai_action.triggered.connect(self.run_kamada_kawai)
+        algorithms_menu.addAction(kamada_kawai_action)
+
         # Меню "Правка" с добавлением узлов и рёбер
         edit_menu = menu_bar.addMenu("Правка")
 
@@ -77,6 +82,11 @@ class MainWindow(QMainWindow):
         remove_edge_action = QAction("Удалить ребро", self)
         remove_edge_action.triggered.connect(self.remove_edge)
         edit_menu.addAction(remove_edge_action)
+
+        # Добавить пункт "Матрица весов"
+        add_matrix_action = QAction("Добавить граф по матрице весов", self)
+        add_matrix_action.triggered.connect(self.add_graph_from_matrix)
+        edit_menu.addAction(add_matrix_action)
 
         # Меню "Настройки"
         settings_menu = menu_bar.addMenu("Настройки")
@@ -169,6 +179,45 @@ class MainWindow(QMainWindow):
                 except ValueError as e:
                     QMessageBox.warning(self, "Ошибка", str(e))
 
+    def add_graph_from_matrix(self):
+        # Диалог для ввода матрицы весов
+        text, ok = QInputDialog.getMultiLineText(
+            self,
+            "Матрица весов",
+            "Введите матрицу весов (через пробелы, строки разделены переносом строки):",
+        )
+        if not ok or not text.strip():
+            return
+
+        try:
+            # Преобразование текста в матрицу
+            matrix = [
+                list(map(float, row.split()))
+                for row in text.strip().split("\n")
+            ]
+
+            # Проверка корректности матрицы
+            size = len(matrix)
+            if not all(len(row) == size for row in matrix):
+                raise ValueError("Матрица должна быть квадратной.")
+
+            # Очистка текущего графа
+            self.canvas.clear_graph()
+
+            # Создание узлов
+            for i in range(size):
+                self.canvas.create_node(str(i), f"Узел {i}", "#ADD8E6")  # Светло-голубой
+
+            # Создание рёбер
+            for i in range(size):
+                for j in range(size):
+                    if matrix[i][j] != 0 and i != j:  # Если вес не равен нулю и это не петля
+                        self.canvas.create_edge(str(i), str(j), matrix[i][j])
+
+            QMessageBox.information(self, "Матрица весов", "Граф успешно создан.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Некорректный ввод матрицы: {e}")
+
     def run_dijkstra(self):
         # Диалог для запуска алгоритма Дейкстры
         start_node, ok = QInputDialog.getText(self, "Алгоритм Дейкстры", "Введите начальный узел:")
@@ -211,3 +260,14 @@ class MainWindow(QMainWindow):
         color = QColorDialog.getColor()
         if color.isValid():
             self.canvas.set_edge_color(color)
+
+    def run_kamada_kawai(self):
+        # Вызываем алгоритм Камада-Кавай
+        try:
+            layout = kamada_kawai_layout(self.canvas)
+            for node_id, (x, y) in layout.items():
+                self.canvas.move_node(node_id, x, y)  # Метод для перемещения узлов
+            self.canvas.update()  # Обновление сцены
+            QMessageBox.information(self, "Камада-Кавай", "Расположение узлов выполнено.")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось выполнить алгоритм Камада-Кавай: {e}")
