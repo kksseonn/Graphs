@@ -38,15 +38,30 @@ class Graph:
         self.graph.remove_edge(start, end)
         print(f"Ребро {start} -> {end} удалено.")
 
-    def from_adjacency_matrix(self, matrix):
-        """Создание графа из матрицы смежности."""
-        self.graph = nx.from_numpy_matrix(np.array(matrix))
-
     def from_weight_matrix(self, matrix):
-        """Создание графа из матрицы весов."""
-        self.graph = nx.Graph()
+        """
+        Создание графа из матрицы весов.
+
+        Аргументы:
+            matrix (list[list[float]]): Матрица весов. 0 или '-' означают отсутствие ребра.
+        """
+        if not matrix or not all(len(row) == len(matrix[0]) for row in matrix):
+            raise ValueError("Матрица весов должна быть прямоугольной.")
+        
+        self.graph.clear()  # Очистка графа
+
         rows, cols = len(matrix), len(matrix[0])
+
+        # Добавление узлов
+        for i in range(rows):
+            self.graph.add_node(i, label=f"Узел {i}")  # Узлы имеют метки "Узел i"
+
+        # Добавление рёбер
         for i in range(rows):
             for j in range(cols):
-                if matrix[i][j] != 0:  # Только ненулевые веса
-                    self.graph.add_edge(i, j, weight=matrix[i][j])
+                if matrix[i][j] not in [0, "-"]:  # Пропуск отсутствующих рёбер
+                    try:
+                        weight = float(matrix[i][j])
+                        self.graph.add_edge(i, j, weight=weight)
+                    except ValueError:
+                        raise ValueError(f"Некорректное значение матрицы: {matrix[i][j]} в позиции ({i}, {j})")

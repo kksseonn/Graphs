@@ -21,6 +21,7 @@ def kamada_kawai_layout(graph):
     """Расположение узлов графа с использованием алгоритма Камада-Кавай."""
     try:
         positions = nx.kamada_kawai_layout(graph.graph)
+        print(f"Рассчитанные позиции: {positions}")  # Отладочный вывод
         return positions
     except nx.NetworkXError as e:
         raise ValueError(f"Ошибка алгоритма Камада-Кавай: {e}")
