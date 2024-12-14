@@ -1,13 +1,15 @@
 #ui/dialog_handler.py
 
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
-from ui.input_dialogs import NodeDialog, EdgeDialog
 from core.algorithms import dijkstra, prim_mst
 from core.layout import kamada_kawai_layout
 from core.data_storage import serialize_graph, deserialize_graph
 from utils.file_operations import save_to_file, load_from_file
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDialog
 import networkx as nx
+from .dialogs.node_dialog import NodeDialog
+from .dialogs.edge_dialog import EdgeDialog
+from .dialogs.matrix_dialog import MatrixDialog
 
 class DialogHandler:
     """
@@ -75,7 +77,7 @@ class DialogHandler:
                 return
 
             # Шаг 2: Диалог ввода матрицы
-            dialog = MatrixInputDialog(node_count, self.parent)
+            dialog = MatrixDialog(node_count, self.parent)
             if dialog.exec() == QDialog.Accepted:
                 matrix = dialog.matrix
 
@@ -166,36 +168,3 @@ class DialogHandler:
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка алгоритма Камада-Кавай: {e}")
 
-
-
-class MatrixInputDialog(QDialog):
-    def __init__(self, node_count, parent=None):
-        super().__init__(parent)
-        self.node_count = node_count
-        self.matrix = [[0] * node_count for _ in range(node_count)]
-        self.setWindowTitle("Ввод матрицы весов")
-        layout = QVBoxLayout(self)
-
-        # Создание таблицы для ввода
-        self.table = QTableWidget(node_count, node_count, self)
-        self.table.setHorizontalHeaderLabels([f"Узел {i}" for i in range(node_count)])
-        self.table.setVerticalHeaderLabels([f"Узел {i}" for i in range(node_count)])
-        layout.addWidget(self.table)
-
-        # Кнопка OK
-        self.ok_button = QPushButton("OK", self)
-        self.ok_button.clicked.connect(self.process_input)
-        layout.addWidget(self.ok_button)
-
-    def process_input(self):
-        try:
-            for i in range(self.node_count):
-                for j in range(self.node_count):
-                    item = self.table.item(i, j)
-                    if item is None or item.text().strip() in ["", "-"]:
-                        self.matrix[i][j] = 0  # Пропуск ребра
-                    else:
-                        self.matrix[i][j] = float(item.text().strip())
-            self.accept()
-        except ValueError as e:
-            QMessageBox.critical(self, "Ошибка", f"Ошибка ввода данных: {e}")
