@@ -21,6 +21,7 @@ class MenuBarCreator:
         file_menu = menu_bar.addMenu("Файл")
         file_menu.addAction(self.dialog_handler.create_action("Сохранить", self.dialog_handler.save_graph))
         file_menu.addAction(self.dialog_handler.create_action("Загрузить", self.dialog_handler.load_graph))
+        file_menu.addAction(self.dialog_handler.create_action("Очистить", self.dialog_handler.delete_graph))
         file_menu.addAction(self.dialog_handler.create_action("Выход", self.main_window.close))
 
         # Меню "Алгоритмы"

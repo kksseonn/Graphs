@@ -1,15 +1,11 @@
 #ui/dialog_handler.py
 
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
-from core.algorithms import dijkstra, prim_mst
-from core.layout import kamada_kawai_layout
-from core.data_storage import serialize_graph, deserialize_graph
+from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph
 from utils.file_operations import save_to_file, load_from_file
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDialog
 import networkx as nx
-from .dialogs.node_dialog import NodeDialog
-from .dialogs.edge_dialog import EdgeDialog
-from .dialogs.matrix_dialog import MatrixDialog
+from .dialogs import NodeDialog, EdgeDialog, MatrixDialog
 
 class DialogHandler:
     """
@@ -109,6 +105,7 @@ class DialogHandler:
         save_to_file(self.parent, graph_data)
 
     def load_graph(self):
+        self.delete_graph()
         graph_data = load_from_file(self.parent)
         if not graph_data:
             return
@@ -119,6 +116,11 @@ class DialogHandler:
             QMessageBox.information(self.parent, "Загрузка", "Граф успешно загружен.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка загрузки графа: {e}")
+    
+    def delete_graph(self):
+        """Очищаем граф на холсте."""
+        self.canvas.graph.clear()  # Удаляем все элементы графа с холста
+        self.canvas.update()  # Обновляем холст для применения изменений
 
     def change_node_color(self):
         color = QColorDialog.getColor()
