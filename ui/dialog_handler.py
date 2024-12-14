@@ -2,7 +2,8 @@
 
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
 from ui.input_dialogs import NodeDialog, EdgeDialog
-from core.algorithms import dijkstra, prim_mst, kamada_kawai_layout
+from core.algorithms import dijkstra, prim_mst
+from core.layout import kamada_kawai_layout
 from core.data_storage import serialize_graph, deserialize_graph
 from utils.file_operations import save_to_file, load_from_file
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDialog
