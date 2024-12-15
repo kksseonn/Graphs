@@ -1,7 +1,7 @@
 #ui/dialog_handler.py
 
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
-from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph, force_directed_layout
+from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph, force_directed_layout, spring_layout
 from utils.file_operations import save_to_file, load_from_file
 
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDialog
@@ -239,3 +239,25 @@ class DialogHandler:
             QMessageBox.information(self.parent, "Силовой метод", "Расположение узлов выполнено.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка силового метода: {e}")
+
+    def run_spring_layout(self):
+        try:
+            # Проверка связности графа
+            if not self.canvas.graph or not nx.is_connected(self.canvas.graph):
+                QMessageBox.warning(self.parent, "Ошибка", "Граф должен быть связным для выполнения пружинного алгоритма.")
+                return
+
+            # Обновление NetworkX-графа
+            self.canvas.graph.clear()
+            for node_id in self.canvas.nodes:
+                self.canvas.graph.add_node(node_id)
+            for (start, end), edge in self.canvas.edges.items():
+                self.canvas.graph.add_edge(start, end)
+
+            # Запуск пружинного алгоритма
+            spring_layout(self.canvas.graph, self.canvas)  # Передаем canvas для обновления позиции узлов
+
+            self.canvas.scene.update()  # Обновление сцены после перемещения узлов
+            QMessageBox.information(self.parent, "Пружинный алгоритм", "Расположение узлов выполнено.")
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Ошибка", f"Ошибка пружинного алгоритма: {e}")
