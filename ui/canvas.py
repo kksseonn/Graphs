@@ -30,6 +30,7 @@ class Canvas(QGraphicsView):
         self.update_timer = QTimer(self)
         self.update_timer.timeout.connect(self.viewport().update)
         self.update_timer.start(20)  # Обновление каждые 20 мс
+        self.update_timer.timeout.connect(self.update_graph)
 
 
         # Сцена и граф
@@ -197,22 +198,22 @@ class Canvas(QGraphicsView):
             end_node = self.nodes[end][0]
             self.update_edge_position(edge, start_node, end_node)
             self.update_edge_label_position(edge, self.edge_labels[(start, end)], start_node, end_node)
-
+    def update_graph(self):
+        """Метод, вызываемый таймером для обновления графа."""
+        self.update_edges()
+        self.viewport().update()
     # --- Методы управления сценой ---
     def mouseMoveEvent(self, event):
+        """
+        Обрабатывает перемещение мыши, обновляя позиции узлов, рёбер и меток рёбер.
+        """
         if self.selected_node:
+            # Новая позиция узла
             new_pos = self.mapToScene(event.pos()) - self.offset
             self.selected_node.setPos(new_pos)
 
-            # Обновляем только те рёбра, которые связаны с перемещаемым узлом
-            node_id = self.selected_node.data(0)
-            self.update_node_position(node_id)  # Обновляем позицию узла в графе
-            for (start, end), edge in self.edges.items():
-                if start == node_id or end == node_id:
-                    start_node = self.nodes[start][0]
-                    end_node = self.nodes[end][0]
-                    self.update_edge_position(edge, start_node, end_node)
-                    self.update_edge_label_position(edge, self.edge_labels[(start, end)], start_node, end_node)
+            # Обновление позиций рёбер
+            self.update_edges()
 
             # Принудительное обновление сцены
             self.scene.update()
