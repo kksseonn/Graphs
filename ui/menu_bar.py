@@ -29,6 +29,8 @@ class MenuBarCreator:
         algorithms_menu.addAction(self.dialog_handler.create_action("Поиск кратчайшего пути", self.dialog_handler.run_dijkstra))
         algorithms_menu.addAction(self.dialog_handler.create_action("Минимальное остовное дерево", self.dialog_handler.run_prim))
         algorithms_menu.addAction(self.dialog_handler.create_action("Расположение Камада-Кавай", self.dialog_handler.run_kamada_kawai))
+        algorithms_menu.addAction(self.dialog_handler.create_action("Силовой метод", self.dialog_handler.run_force_directed))
+
 
         # Меню "Правка"
         edit_menu = menu_bar.addMenu("Правка")

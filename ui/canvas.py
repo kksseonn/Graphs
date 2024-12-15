@@ -283,8 +283,10 @@ class Canvas(QGraphicsView):
 
     def move_node(self, node_id, x, y):
         if node_id not in self.nodes:
-            raise ValueError(f"Node {node_id} does not exist.")
-        
+            raise ValueError(f"Узел с ID {node_id} не найден.")
+        print(f"Содержимое self.nodes[{node_id}]: {self.nodes[node_id]}")  # Перед вызовом node.setPos
+        node, _ = self.nodes[node_id][0]  # Проверяем, что это список или кортеж
+        print(f"Узел {node_id} представлен объектом: {node}, тип: {type(node)}")
         node, _ = self.nodes[node_id][0]
         print(f"Перемещение узла {node_id} в ({x}, {y})")  # Отладочное сообщение
         node.setPos(x, y)

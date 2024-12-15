@@ -1,7 +1,7 @@
 #ui/dialog_handler.py
 
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
-from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph
+from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph, force_directed_layout
 from utils.file_operations import save_to_file, load_from_file
 
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDialog
@@ -106,7 +106,7 @@ class DialogHandler:
         """Синхронизирует позиции всех узлов в графе."""
         for node_id, (node_item, _) in self.canvas.nodes.items():
             self.canvas.update_node_position(node_id)
-            
+
     def save_graph(self):
         self.sync_all_node_positions()  # Синхронизируем позиции всех узлов
         graph_data = serialize_graph(self.canvas)
@@ -177,16 +177,65 @@ class DialogHandler:
                 self.canvas.graph.add_edge(start, end)
 
             # Применение алгоритма Камада-Кавай
-            layout = kamada_kawai_layout(self.canvas)
+            layout = kamada_kawai_layout(self.canvas.graph)  # Передача графа, а не canvas
+            if not layout:
+                QMessageBox.warning(self.parent, "Ошибка", "Алгоритм Камада-Кавай не вернул расположение для узлов.")
+                return
+
+            # Нормализация координат и обновление позиций
             max_x = max(x for x, _ in layout.values())
             max_y = max(y for _, y in layout.values())
+
             for node_id, (x, y) in layout.items():
                 scaled_x = (x / max_x) * 100  # Нормализация
                 scaled_y = (y / max_y) * 100
-                self.canvas.move_node(node_id, scaled_x, scaled_y)
+                # Обновление позиции узла в графе
+                self.canvas.update_node_position(node_id)
 
-            self.canvas.scene.update()
+                # Получаем графический элемент узла для обновления
+                node_item = self.canvas.nodes[node_id][0]  # Предположим, что первый элемент - это QGraphicsEllipseItem
+                node_item.setPos(scaled_x, scaled_y)  # Устанавливаем новую позицию
+
+            self.canvas.scene.update()  # Обновление сцены после перемещения узлов
             QMessageBox.information(self.parent, "Камада-Кавай", "Расположение узлов выполнено.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка алгоритма Камада-Кавай: {e}")
 
+    def run_force_directed(self):
+        try:
+            # Проверка связности графа
+            if not self.canvas.graph or not nx.is_connected(self.canvas.graph):
+                QMessageBox.warning(self.parent, "Ошибка", "Граф должен быть связным для выполнения силового метода.")
+                return
+
+            # Обновление NetworkX-графа
+            self.canvas.graph.clear()
+            for node_id in self.canvas.nodes:
+                self.canvas.graph.add_node(node_id)
+            for (start, end), edge in self.canvas.edges.items():
+                self.canvas.graph.add_edge(start, end)
+
+            # Применение силового метода
+            layout = force_directed_layout(self.canvas.graph)  # Передача графа в алгоритм
+            if not layout:
+                QMessageBox.warning(self.parent, "Ошибка", "Силовой метод не вернул расположение для узлов.")
+                return
+
+            # Нормализация координат и обновление позиций
+            max_x = max(x for x, _ in layout.values())
+            max_y = max(y for _, y in layout.values())
+
+            for node_id, (x, y) in layout.items():
+                scaled_x = (x / max_x) * 100  # Нормализация
+                scaled_y = (y / max_y) * 100
+                # Обновление позиции узла в графе
+                self.canvas.update_node_position(node_id)
+
+                # Получаем графический элемент узла для обновления
+                node_item = self.canvas.nodes[node_id][0]  # Предположим, что первый элемент - это QGraphicsEllipseItem
+                node_item.setPos(scaled_x, scaled_y)  # Устанавливаем новую позицию
+
+            self.canvas.scene.update()  # Обновление сцены после перемещения узлов
+            QMessageBox.information(self.parent, "Силовой метод", "Расположение узлов выполнено.")
+        except Exception as e:
+            QMessageBox.critical(self.parent, "Ошибка", f"Ошибка силового метода: {e}")
