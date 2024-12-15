@@ -13,7 +13,7 @@ class Canvas(QGraphicsView):
         self.edge_thickness = 2
         self.scale_factor = 1.1
         self.mst_edge_color = Qt.blue
-        self.shortest_path_color = Qt.green
+        self.shortest_path_color = QColor(0, 255, 0)
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)
 
@@ -232,3 +232,96 @@ class Canvas(QGraphicsView):
         """Сбрасывает масштаб и центрирует вид."""
         self.resetTransform()
         self.centerOn(0, 0)
+
+    def highlight_mst(self, mst_edges):
+        """
+        Метод для выделения рёбер минимального остовного дерева (MST).
+        :param mst_edges: Список рёбер минимального остовного дерева.
+        """
+        self.clear_highlighted_paths()
+        for edge in mst_edges:
+            if isinstance(edge, tuple) and len(edge) == 3:
+                start, end, data = edge
+                # Проверяем, есть ли такое ребро в графе
+                if (start, end) in self.edges:
+                    edge_item = self.edges[(start, end)]
+                    # Меняем цвет ребра на синий (или другой цвет для MST)
+                    edge_item.setPen(QPen(self.mst_edge_color, self.edge_thickness))
+                    # Если есть метка для этого ребра, меняем её цвет
+                    # label = self.edge_labels.get((start, end))
+                    # if label:
+                    #     label.setDefaultTextColor(self.mst_edge_color)
+                elif (end, start) in self.edges:  # Проверка для ребра в другом порядке
+                    edge_item = self.edges[(end, start)]
+                    edge_item.setPen(QPen(self.mst_edge_color, self.edge_thickness))
+                    # label = self.edge_labels.get((end, start))
+                    # if label:
+                    #     label.setDefaultTextColor(self.mst_edge_color)
+            else:
+                print(f"Некорректный элемент в mst_edges: {edge}")
+
+        # Принудительное обновление сцены после изменений
+        self.scene.update()
+
+    def highlight_shortest_paths(self, distances, paths):
+        self.clear_highlighted_paths()
+        print("Paths:", paths)
+
+        for path in paths:
+            print(f"Highlighting path: {path}")
+            for i in range(len(path) - 1):
+                start = path[i]
+                end = path[i + 1]
+                print(f"Highlighting edge from {start} to {end}")
+
+                edge = self.edges.get((start, end)) or self.edges.get((end, start))
+                
+                if edge:
+                    print(f"Edge found between {start} and {end}")
+                    edge.setPen(QPen(self.shortest_path_color, self.edge_thickness * 2))  # Подсвечиваем ребро
+                else:
+                    print(f"Edge not found between {start} and {end}")
+
+                start_node, _ = self.nodes.get(start, (None, None))
+                end_node, _ = self.nodes.get(end, (None, None))
+
+                if start_node:
+                    print(f"Highlighting node {start}")
+                    start_node.setBrush(QBrush(Qt.yellow))  # Подсвечиваем начальный узел
+                if end_node:
+                    print(f"Highlighting node {end}")
+                    end_node.setBrush(QBrush(Qt.yellow))  # Подсвечиваем конечный узел
+
+        self.repaint()  # Используем repaint для обновления сцены
+
+    def clear_highlighted_paths(self):
+        # Сбрасываем подсветку рёбер
+        for edge in self.edges.values():
+            edge.setPen(QPen(self.edge_color, self.edge_thickness))  # Возвращаем стандартный цвет и толщину
+
+        # Сбрасываем подсветку узлов
+        for node_id, (ellipse, _) in self.nodes.items():
+            ellipse.setBrush(QBrush(self.node_color))  # Возвращаем стандартный цвет узлов
+
+        self.repaint()  # Перерисовываем сцену
+
+    def clear_graph(self):
+        """Очищаем граф на холсте."""
+        # Удаляем все рёбра
+        for edge in list(self.edges.values()):
+            self.scene.removeItem(edge)  # Удаляем ребра с сцены
+
+        # Удаляем все метки веса рёбер
+        for edge, label in self.edge_labels.items():
+            self.scene.removeItem(label)  # Удаляем метку с сцены
+
+        # Удаляем все узлы
+        for node_id, (ellipse, _) in list(self.nodes.items()):
+            self.scene.removeItem(ellipse)  # Удаляем узлы с сцены
+
+        # Очищаем внутренние структуры данных
+        self.nodes.clear()
+        self.edges.clear()
+        self.edge_labels.clear()  # Очистка меток веса рёбер
+
+        self.update()  # Обновляем холст

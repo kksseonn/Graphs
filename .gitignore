@@ -1,3 +1,6 @@
 core/__pycache__/
 ui/__pycache__/
 utils/__pycache__/
+ui/dialogs/__pycache__/edge_dialog.cpython-311.pyc
+ui/dialogs/__pycache__/matrix_dialog.cpython-311.pyc
+ui/dialogs/__pycache__/node_dialog.cpython-311.pyc

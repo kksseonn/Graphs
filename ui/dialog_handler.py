@@ -3,6 +3,7 @@
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
 from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph
 from utils.file_operations import save_to_file, load_from_file
+
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QPushButton, QDialog
 import networkx as nx
 from .dialogs import NodeDialog, EdgeDialog, MatrixDialog
@@ -119,9 +120,9 @@ class DialogHandler:
     
     def delete_graph(self):
         """Очищаем граф на холсте."""
-        self.canvas.graph.clear()  # Удаляем все элементы графа с холста
+        self.canvas.clear_graph()  # Очистка данных и визуальных элементов
         self.canvas.update()  # Обновляем холст для применения изменений
-
+        
     def change_node_color(self):
         color = QColorDialog.getColor()
         if color.isValid():
@@ -133,10 +134,22 @@ class DialogHandler:
             self.canvas.set_edge_color(color)
 
     def run_dijkstra(self):
+        # Запрашиваем начальный узел
         start_node, ok = QInputDialog.getText(self.parent, "Алгоритм Дейкстры", "Введите начальный узел:")
         if ok and start_node in self.canvas.nodes:
-            distances, _ = dijkstra(self.canvas, start_node)
-            self.canvas.highlight_shortest_paths(distances)
+            # Запрашиваем конечный узел
+            end_node, ok = QInputDialog.getText(self.parent, "Алгоритм Дейкстры", "Введите конечный узел:")
+
+            if ok and end_node in self.canvas.nodes:
+                # Выполнение алгоритма Дейкстры для поиска кратчайшего пути от start_node до end_node
+                distance, path = dijkstra(self.canvas, start_node, end_node)
+                print(f"Distance: {distance}")
+                print(f"Path: {path}")
+                self.canvas.highlight_shortest_paths(distance, path)  # Выделение кратчайшего пути
+            else:
+                # Если конечный узел не найден или не был введён
+                QMessageBox.warning(self.parent, "Ошибка", "Конечный узел не существует или не был введён.")
+
 
     def run_prim(self):
         mst_edges = prim_mst(self.canvas)
