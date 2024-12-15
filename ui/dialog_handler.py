@@ -102,9 +102,13 @@ class DialogHandler:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка создания графа: {e}")
 
 
-
-
+    def sync_all_node_positions(self):
+        """Синхронизирует позиции всех узлов в графе."""
+        for node_id, (node_item, _) in self.canvas.nodes.items():
+            self.canvas.update_node_position(node_id)
+            
     def save_graph(self):
+        self.sync_all_node_positions()  # Синхронизируем позиции всех узлов
         graph_data = serialize_graph(self.canvas)
         save_to_file(self.parent, graph_data)
 
