@@ -2,29 +2,27 @@
 
 import json
 from PyQt5.QtGui import QPen
+from PyQt5.QtCore import QPointF
 
 def serialize_graph(graph):
     """Сериализует граф в JSON-формат."""
-    # Сериализация узлов
-    nodes = [
-        {
+    nodes = []
+    for node_id, data in graph.graph.nodes(data=True):
+        position = data.get('position', (0, 0))  # Получаем позицию узла из атрибутов
+        nodes.append({
             "id": node_id,
-            "label": data['label'],  # Прямо берем из атрибутов узла
+            "label": data['label'],
             "color": data['color'],
-            "position": (data.get('position', (0, 0)))  # Получаем позицию, если она есть
-        }
-        for node_id, data in graph.graph.nodes(data=True)
-    ]
+            "position": position  # Сохраняем позицию узла
+        })
     
-    # Сериализация рёбер
-    edges = [
-        {
+    edges = []
+    for start, end, data in graph.graph.edges(data=True):
+        edges.append({
             "start": start,
             "end": end,
-            "weight": data['weight']  # Берем вес из атрибутов ребра
-        }
-        for start, end, data in graph.graph.edges(data=True)
-    ]
+            "weight": data['weight']
+        })
     
     return json.dumps({"nodes": nodes, "edges": edges}, indent=4)
 
@@ -38,10 +36,9 @@ def deserialize_graph(graph, json_data):
         graph.create_node(
             node_id=node["id"],
             label=node["label"],
-            color=node["color"]
+            color=node["color"],
+            position=tuple(node["position"])  # Передаем позицию узла как кортеж
         )
-        # Устанавливаем позицию узла
-        graph.nodes[node["id"]][0].setPos(node["position"][0], node["position"][1])
     
     # Восстановление рёбер
     for edge in data["edges"]:

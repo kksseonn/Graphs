@@ -2,6 +2,7 @@
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsEllipseItem, QGraphicsLineItem, QGraphicsTextItem
 from PyQt5.QtGui import QBrush, QPen, QColor
 from PyQt5.QtCore import Qt, QPointF
+from PyQt5.QtGui import QFont
 from math import atan2, cos, sin
 import networkx as nx
 
@@ -24,17 +25,20 @@ class Canvas(QGraphicsView):
         self.selected_node = None
         self.offset = QPointF()
 
-    def create_node(self, node_id, label, color="blue"):
+    def create_node(self, node_id, label, color="blue", position=None):
         if node_id in self.nodes:
             raise ValueError(f"Node with ID {node_id} already exists.")
 
-        # Добавление узла в NetworkX-граф
-        self.graph.add_node(node_id, label=label, color=color)
+        # Если позиция не передана, установим по умолчанию
+        if position is None:
+            position = (50 * len(self.nodes), 50)
+
+        # Добавление узла в NetworkX-граф с атрибутом позиции
+        self.graph.add_node(node_id, label=label, color=color, position=position)
 
         # Создание графического узла
         radius = 20
-        x, y = 50 * len(self.nodes), 50
-
+        x, y = position  # Используем переданную позицию
         ellipse = QGraphicsEllipseItem(x, y, radius * 2, radius * 2)
         ellipse.setBrush(QBrush(QColor(color)))
         ellipse.setFlag(QGraphicsEllipseItem.ItemIsMovable)
@@ -53,6 +57,9 @@ class Canvas(QGraphicsView):
 
         self.scene.addItem(ellipse)
         self.nodes[node_id] = (ellipse, text)
+
+        # Логирование позиции для отладки
+        print(f"Создан узел {node_id} с позицией {position}")
 
     def create_edge(self, start, end, weight=1):
         if not (start in self.nodes and end in self.nodes):
@@ -84,9 +91,10 @@ class Canvas(QGraphicsView):
         self.scene.addItem(edge)
         self.edges[(start, end)] = edge
 
-        # Добавление текстовой метки веса ребра
+        # Добавление текстовой метки веса ребра с увеличенным шрифтом
         label = QGraphicsTextItem(str(weight))
         label.setDefaultTextColor(Qt.red)
+        label.setFont(QFont("Arial", 12))  # Устанавливаем шрифт и размер
         self.scene.addItem(label)
         self.edge_labels[(start, end)] = label
         self.update_edge_label_position(edge, label, start_node, end_node)
@@ -220,10 +228,19 @@ class Canvas(QGraphicsView):
         if node_id not in self.nodes:
             raise ValueError(f"Node {node_id} does not exist.")
         
-        node, _ = self.nodes[node_id]
+        node, _ = self.nodes[node_id][0]
         print(f"Перемещение узла {node_id} в ({x}, {y})")  # Отладочное сообщение
         node.setPos(x, y)
+        self.update_node_position(node_id)
         self.update_edges()  # Обновляем связанные рёбра
+
+    def update_node_position(self, node_id):
+        """Обновляет позицию узла в графе после его перемещения."""
+        node = self.nodes[node_id][0]  # Получаем графический элемент узла
+        position = node.pos()  # Получаем текущую позицию графического узла
+        # Обновляем позицию в NetworkX графе
+        self.graph.nodes[node_id]['position'] = (position.x(), position.y())
+        print(f"Позиция узла {node_id} обновлена на {position.x()}, {position.y()}")
 
     def zoom_in(self):
         """Увеличивает масштаб холста."""
