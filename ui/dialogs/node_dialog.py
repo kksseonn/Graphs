@@ -1,9 +1,10 @@
 # ui/dialogs/node_dialog.py
-
+import random
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, 
     QColorDialog
 )
+from PyQt5.QtGui import QColor
 
 
 class NodeDialog(QDialog):
@@ -15,11 +16,7 @@ class NodeDialog(QDialog):
         # Инициализация виджетов
         layout = QVBoxLayout()
 
-        # Поля для ID, метки и выбора цвета узла
-        self.id_input = QLineEdit()
-        layout.addWidget(QLabel("ID узла"))
-        layout.addWidget(self.id_input)
-
+        # Поле для метки и выбора цвета узла
         self.label_input = QLineEdit()
         layout.addWidget(QLabel("Метка узла"))
         layout.addWidget(self.label_input)
@@ -29,6 +26,11 @@ class NodeDialog(QDialog):
         self.color = "blue"  # Цвет по умолчанию
         layout.addWidget(QLabel("Цвет узла"))
         layout.addWidget(self.color_button)
+
+        # Кнопка для случайного цвета
+        self.random_color_button = QPushButton("Случайный цвет")
+        self.random_color_button.clicked.connect(self.set_random_color)
+        layout.addWidget(self.random_color_button)
 
         # Кнопки OK и Отмена
         button_layout = QHBoxLayout()
@@ -49,10 +51,17 @@ class NodeDialog(QDialog):
             self.color = color.name()
             self.color_button.setStyleSheet(f"background-color: {self.color}")
 
+    def set_random_color(self):
+        """Генерирует случайный цвет и обновляет стиль кнопки."""
+        random_color = QColor(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        self.color = random_color.name()
+        self.color_button.setStyleSheet(f"background-color: {self.color}")
+
     def get_data(self):
-        """Возвращает данные из полей формы."""
+        """Возвращает данные из полей формы, устанавливая ID равным метке."""
+        label = self.label_input.text().strip()
         return {
-            "id": self.id_input.text().strip(),
-            "label": self.label_input.text().strip(),
+            "id": label,  # Устанавливаем ID равным метке
+            "label": label,
             "color": self.color,
         }

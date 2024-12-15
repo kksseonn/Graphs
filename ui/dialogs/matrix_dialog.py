@@ -32,7 +32,7 @@ class MatrixDialog(QDialog):
                     if item is None or item.text().strip() in ["", "-"]:
                         self.matrix[i][j] = 0  # Пропуск ребра
                     else:
-                        self.matrix[i][j] = float(item.text().strip())
+                        self.matrix[i][j] = int(item.text().strip())
             self.accept()
         except ValueError as e:
             QMessageBox.critical(self, "Ошибка", f"Ошибка ввода данных: {e}")

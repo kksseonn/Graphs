@@ -58,7 +58,8 @@ class Canvas(QGraphicsView):
         if not (start in self.nodes and end in self.nodes):
             raise ValueError("Both nodes must exist to create an edge.")
 
-        if self.graph.has_edge(start, end):
+        # Для неориентированного графа проверяем оба направления
+        if self.graph.has_edge(start, end) or self.graph.has_edge(end, start):
             raise ValueError(f"Edge between {start} and {end} already exists.")
 
         # Добавление ребра в NetworkX-граф
@@ -89,6 +90,10 @@ class Canvas(QGraphicsView):
         self.scene.addItem(label)
         self.edge_labels[(start, end)] = label
         self.update_edge_label_position(edge, label, start_node, end_node)
+
+        # Отладка
+        print(f"Ребро между {start} и {end} с весом {weight} добавлено.")
+
 
     def delete_node(self, node_id):
         if node_id not in self.nodes:

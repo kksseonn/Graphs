@@ -78,27 +78,30 @@ class DialogHandler:
             if dialog.exec() == QDialog.Accepted:
                 matrix = dialog.matrix
 
-                # Проверка матрицы (можно добавить настройку обработки самопетель)
-                if any(len(row) != node_count for row in matrix):
-                    QMessageBox.critical(self.parent, "Ошибка", "Матрица должна быть квадратной.")
-                    return
-
                 # Шаг 3: Создание графа
                 self.canvas.clear_graph()
                 for i in range(node_count):
                     self.canvas.create_node(str(i), f"Узел {i}", "#ADD8E6")
 
+                # Шаг 4: Создание рёбер
                 for i in range(node_count):
-                    for j in range(node_count):
-                        if matrix[i][j] != 0:  # Самопетли добавляются, если `i == j`
-                            try:
-                                self.canvas.create_edge(str(i), str(j), float(matrix[i][j]))
-                            except ValueError as e:
-                                QMessageBox.warning(self.parent, "Ошибка", f"Некорректное значение ребра ({i}, {j}): {e}")
+                    for j in range(i + 1, node_count):  # Проверяем только одну половину матрицы
+                        if matrix[i][j] != 0:  # Если вес рёбра не 0
+                            if self.canvas.graph.has_edge(str(i), str(j)):
+                                QMessageBox.warning(self.parent, "Ошибка", f"Ребро между {i} и {j} уже существует.")
+                            else:
+                                try:
+                                    # Преобразуем вес в целое число
+                                    weight = int(matrix[i][j])
+                                    self.canvas.create_edge(str(i), str(j), weight)
+                                except ValueError as e:
+                                    QMessageBox.warning(self.parent, "Ошибка", f"Некорректное значение ребра ({i}, {j}): {e}")
 
                 QMessageBox.information(self.parent, "Матрица весов", "Граф успешно создан.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка создания графа: {e}")
+
+
 
 
     def save_graph(self):
@@ -122,7 +125,7 @@ class DialogHandler:
         """Очищаем граф на холсте."""
         self.canvas.clear_graph()  # Очистка данных и визуальных элементов
         self.canvas.update()  # Обновляем холст для применения изменений
-        
+
     def change_node_color(self):
         color = QColorDialog.getColor()
         if color.isValid():

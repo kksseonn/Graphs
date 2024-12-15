@@ -1,0 +1,23 @@
+{
+    "nodes": [
+        {
+            "id": "1",
+            "label": "1",
+            "color": "#4bf3d8",
+            "position": [
+                0.0,
+                0.0
+            ]
+        },
+        {
+            "id": "2",
+            "label": "2",
+            "color": "#9e2d75",
+            "position": [
+                0.0,
+                0.0
+            ]
+        }
+    ],
+    "edges": []
+}
