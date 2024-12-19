@@ -1,5 +1,4 @@
 # ui/main_window.py
-# ui/main_window.py
 
 from PyQt5.QtWidgets import QMainWindow
 from ui.menu_bar import MenuBarCreator

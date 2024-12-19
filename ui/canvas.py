@@ -32,7 +32,6 @@ class Canvas(QGraphicsView):
         self.update_timer.start(20)  # Обновление каждые 20 мс
         self.update_timer.timeout.connect(self.update_graph)
 
-
         # Сцена и граф
         self.scene = QGraphicsScene(self)
         self.setScene(self.scene)

@@ -4,17 +4,6 @@ import networkx as nx
 def dijkstra(graph, start, end=None):
     """
     Поиск кратчайших путей с помощью NetworkX.
-    
-    Parameters:
-        graph (nx.Graph): Граф в формате NetworkX.
-        start (hashable): Начальный узел для алгоритма Дейкстры.
-        end (hashable, optional): Конечный узел для поиска пути. Если None, возвращает пути для всех узлов.
-    
-    Returns:
-        tuple: Список рёбер и длина пути.
-    
-    Raises:
-        ValueError: Если возникнет ошибка при выполнении алгоритма.
     """
     try:
         # Вызываем метод single_source_dijkstra для получения длин и путей
@@ -42,15 +31,6 @@ def dijkstra(graph, start, end=None):
 def prim_mst(graph):
     """
     Поиск минимального остовного дерева через NetworkX.
-    
-    Parameters:
-        graph (nx.Graph): Граф в формате NetworkX.
-    
-    Returns:
-        list: Список рёбер с информацией о весах.
-    
-    Raises:
-        ValueError: Если возникнет ошибка при построении MST.
     """
     try:
         # Строим минимальное остовное дерево
