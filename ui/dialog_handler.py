@@ -1,5 +1,5 @@
 #ui/dialog_handler.py
-
+import time
 from PyQt5.QtWidgets import QInputDialog, QMessageBox, QColorDialog, QAction, QDialog
 from core import dijkstra, prim_mst, kamada_kawai_layout, serialize_graph, deserialize_graph, force_directed_layout, spring_layout
 from utils.file_operations import save_to_file, load_from_file
@@ -177,13 +177,16 @@ class DialogHandler:
                 self.canvas.graph.add_node(node_id)
             for (start, end), edge in self.canvas.edges.items():
                 self.canvas.graph.add_edge(start, end)
-
+            # Измерение времени
+            start_time = time.time()
             # Применение алгоритма Камада-Кавай
             layout = kamada_kawai_layout(self.canvas.graph)  # Передача графа, а не canvas
             if not layout:
                 QMessageBox.warning(self.parent, "Ошибка", "Алгоритм Камада-Кавай не вернул расположение для узлов.")
                 return
-
+            # Измерение времени завершено
+            end_time = time.time()
+            elapsed_time = end_time - start_time
             # Нормализация координат и обновление позиций
             max_x = max(x for x, _ in layout.values())
             max_y = max(y for _, y in layout.values())
@@ -199,7 +202,7 @@ class DialogHandler:
                 node_item.setPos(scaled_x, scaled_y)  # Устанавливаем новую позицию
 
             self.canvas.scene.update()  # Обновление сцены после перемещения узлов
-            QMessageBox.information(self.parent, "Камада-Кавай", "Расположение узлов выполнено.")
+            QMessageBox.information(self.parent, "Камада-Кавай", f"Расположение узлов выполнено за {elapsed_time:.4f} секунд.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка алгоритма Камада-Кавай: {e}")
 
@@ -217,12 +220,16 @@ class DialogHandler:
             for (start, end), edge in self.canvas.edges.items():
                 self.canvas.graph.add_edge(start, end)
 
+            # Измерение времени
+            start_time = time.time()
             # Применение силового метода
             layout = force_directed_layout(self.canvas.graph)  # Передача графа в алгоритм
             if not layout:
                 QMessageBox.warning(self.parent, "Ошибка", "Силовой метод не вернул расположение для узлов.")
                 return
-
+            # Измерение времени завершено
+            end_time = time.time()
+            elapsed_time = end_time - start_time
             # Нормализация координат и обновление позиций
             max_x = max(x for x, _ in layout.values())
             max_y = max(y for _, y in layout.values())
@@ -238,7 +245,7 @@ class DialogHandler:
                 node_item.setPos(scaled_x, scaled_y)  # Устанавливаем новую позицию
 
             self.canvas.scene.update()  # Обновление сцены после перемещения узлов
-            QMessageBox.information(self.parent, "Силовой метод", "Расположение узлов выполнено.")
+            QMessageBox.information(self.parent, "Силовой метод", f"Расположение узлов выполнено за {elapsed_time:.4f} секунд.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка силового метода: {e}")
 
@@ -255,11 +262,14 @@ class DialogHandler:
                 self.canvas.graph.add_node(node_id)
             for (start, end), edge in self.canvas.edges.items():
                 self.canvas.graph.add_edge(start, end)
-
+            # Измерение времени
+            start_time = time.time()
             # Запуск пружинного алгоритма
             spring_layout(self.canvas.graph, self.canvas)  # Передаем canvas для обновления позиции узлов
-
+            # Измерение времени завершено
+            end_time = time.time()
+            elapsed_time = end_time - start_time
             self.canvas.scene.update()  # Обновление сцены после перемещения узлов
-            QMessageBox.information(self.parent, "Пружинный алгоритм", "Расположение узлов выполнено.")
+            QMessageBox.information(self.parent, "Пружинный алгоритм", f"Расположение узлов выполнено за {elapsed_time:.4f} секунд.")
         except Exception as e:
             QMessageBox.critical(self.parent, "Ошибка", f"Ошибка пружинного алгоритма: {e}")
