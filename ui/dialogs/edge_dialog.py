@@ -1,22 +1,35 @@
 # ui/dialogs/edge_dialog.py
-
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, 
-    QColorDialog, QSpinBox, QComboBox
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
+    QSpinBox, QComboBox
 )
-from PyQt5.QtCore import Qt
 
 
 class EdgeDialog(QDialog):
-    def __init__(self, nodes, parent=None):
+    """
+    Диалоговое окно для добавления или редактирования ребра графа.
+
+    Атрибуты:
+        start_node (QComboBox): Поле выбора начального узла.
+        end_node (QComboBox): Поле выбора конечного узла.
+        weight_input (QSpinBox): Поле ввода веса ребра.
+        ok_button (QPushButton): Кнопка подтверждения.
+        cancel_button (QPushButton): Кнопка отмены.
+    """
+
+    def __init__(self, nodes: list, parent=None):
+        """
+        Инициализация диалогового окна.
+
+        :param nodes: Список узлов графа для выбора.
+        :param parent: Родительский виджет.
+        """
         super().__init__(parent)
         self.setWindowTitle("Добавить/Редактировать ребро")
         self.setFixedSize(300, 200)
 
-        # Инициализация виджетов
         layout = QVBoxLayout()
 
-        # Поля для начального и конечного узлов, а также веса
         layout.addWidget(QLabel("Начальный узел"))
         self.start_node = QComboBox()
         self.start_node.addItems(nodes)
@@ -32,7 +45,6 @@ class EdgeDialog(QDialog):
         layout.addWidget(QLabel("Вес ребра"))
         layout.addWidget(self.weight_input)
 
-        # Кнопки OK и Отмена
         button_layout = QHBoxLayout()
         self.ok_button = QPushButton("OK")
         self.ok_button.clicked.connect(self.accept)
@@ -44,8 +56,15 @@ class EdgeDialog(QDialog):
         layout.addLayout(button_layout)
         self.setLayout(layout)
 
-    def get_data(self):
-        """Возвращает данные из полей формы."""
+    def get_data(self) -> dict:
+        """
+        Возвращает данные, введенные в форму.
+
+        :return: Словарь с данными:
+            - start: Начальный узел.
+            - end: Конечный узел.
+            - weight: Вес ребра.
+        """
         return {
             "start": self.start_node.currentText().strip(),
             "end": self.end_node.currentText().strip(),
