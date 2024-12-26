@@ -1,5 +1,4 @@
 # ui/menu_bar.py
-
 from PyQt5.QtWidgets import QMenuBar
 
 class MenuBarCreator:
@@ -32,7 +31,6 @@ class MenuBarCreator:
         algorithms_menu.addAction(self.dialog_handler.create_action("Силовой метод", self.dialog_handler.run_force_directed))
         algorithms_menu.addAction(self.dialog_handler.create_action("Пружинный алгоритм", self.dialog_handler.run_spring_layout))
 
-
         # Меню "Правка"
         edit_menu = menu_bar.addMenu("Правка")
         edit_menu.addAction(self.dialog_handler.create_action("Добавить узел", self.dialog_handler.add_node))
@@ -40,5 +38,28 @@ class MenuBarCreator:
         edit_menu.addAction(self.dialog_handler.create_action("Добавить ребро", self.dialog_handler.add_edge))
         edit_menu.addAction(self.dialog_handler.create_action("Удалить ребро", self.dialog_handler.remove_edge))
         edit_menu.addAction(self.dialog_handler.create_action("Добавить граф по матрице весов", self.dialog_handler.add_graph_from_matrix))
+
+        # Настройка стиля для меню
+        menu_bar.setStyleSheet("""
+            QMenuBar {
+                background-color: #f0f0f0;
+                font-size: 16px;
+                padding: 5px;
+            }
+            QMenuBar::item {
+                padding: 10px;
+            }
+            QMenuBar::item:selected {
+                background-color: #d0d0d0;
+            }
+            QMenu {
+                background-color: #ffffff;
+                font-size: 14px;
+                border: 1px solid #cccccc;
+            }
+            QMenu::item:selected {
+                background-color: #b0b0b0;
+            }
+        """)
 
         return menu_bar

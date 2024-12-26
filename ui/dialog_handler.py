@@ -65,6 +65,10 @@ class DialogHandler:
                     self.canvas.delete_edge(start, end)
                 except ValueError as e:
                     QMessageBox.warning(self.parent, "Ошибка", str(e))
+    
+    def reset_color(self):
+        self.canvas.clear_highlighted_paths()
+        self.canvas.update()  # Обновляем холст для применения изменений
 
     def add_graph_from_matrix(self):
         try:

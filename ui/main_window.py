@@ -1,5 +1,4 @@
 # ui/main_window.py
-
 from PyQt5.QtWidgets import QMainWindow
 from ui.menu_bar import MenuBarCreator
 from ui.tool_bar import ToolBarCreator
@@ -16,7 +15,7 @@ class MainWindow(QMainWindow):
 
         # Установка заголовка и размеров окна
         self.setWindowTitle("Редактор графов")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 900, 700)
 
         # Инициализация холста для графа
         self.canvas = Canvas()

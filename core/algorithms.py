@@ -14,7 +14,7 @@ def dijkstra(graph: nx.Graph, start: str, end: str = None) -> tuple:
     :raises NetworkXError: Ошибка при выполнении алгоритма Дейкстры.
     """
     try:
-        lengths, paths = nx.single_source_dijkstra(graph, source=start)
+        lengths, paths = nx.single_source_dijkstra(graph.graph, source=start)
         if end is not None:
             if end in paths:
                 path = paths[end]
@@ -41,7 +41,7 @@ def prim_mst(graph: nx.Graph) -> list:
     :raises NetworkXError: Ошибка при выполнении алгоритма Прима.
     """
     try:
-        mst = nx.minimum_spanning_tree(graph)
+        mst = nx.minimum_spanning_tree(graph.graph)
         return list(mst.edges(data=True))
     except nx.NetworkXError as e:
         raise ValueError(f"Ошибка алгоритма Прима: {e}")
