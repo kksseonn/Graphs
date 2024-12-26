@@ -5,26 +5,21 @@ from ui.tool_bar import ToolBarCreator
 from ui.dialog_handler import DialogHandler
 from ui.canvas import Canvas
 
+
 class MainWindow(QMainWindow):
-    """
-    Главное окно приложения для работы с графами.
-    """
+    """Главное окно приложения для работы с графами."""
 
     def __init__(self):
         super().__init__()
 
-        # Установка заголовка и размеров окна
         self.setWindowTitle("Редактор графов")
         self.setGeometry(100, 100, 900, 700)
 
-        # Инициализация холста для графа
         self.canvas = Canvas()
         self.setCentralWidget(self.canvas)
 
-        # Создание вспомогательных компонентов
         self.dialog_handler = DialogHandler(self.canvas, self)
 
-        # Создание меню и панели инструментов
         self.menu_bar = MenuBarCreator(self, self.dialog_handler)
         self.setMenuBar(self.menu_bar.create_menu_bar())
 
