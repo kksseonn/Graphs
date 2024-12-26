@@ -1,21 +1,24 @@
 # core/data_storage.py
-
 import json
-from PyQt5.QtGui import QPen
-from PyQt5.QtCore import QPointF
+
 
 def serialize_graph(graph):
-    """Сериализует граф в JSON-формат."""
+    """
+    Сериализует граф в JSON-формат.
+
+    :param graph: Граф, который необходимо сериализовать.
+    :return: Строка в формате JSON, представляющая сериализованный граф.
+    """
     nodes = []
     for node_id, data in graph.graph.nodes(data=True):
-        position = data.get('position', (0, 0))  # Получаем позицию узла из атрибутов
+        position = data.get('position', (0, 0))
         nodes.append({
             "id": node_id,
             "label": data['label'],
             "color": data['color'],
-            "position": position  # Сохраняем позицию узла
+            "position": position
         })
-    
+
     edges = []
     for start, end, data in graph.graph.edges(data=True):
         edges.append({
@@ -23,24 +26,28 @@ def serialize_graph(graph):
             "end": end,
             "weight": data['weight']
         })
-    
     return json.dumps({"nodes": nodes, "edges": edges}, indent=4)
 
-def deserialize_graph(graph, json_data):
-    """Восстанавливает граф из JSON-данных."""
+
+def deserialize_graph(graph, json_data: str) -> None:
+    """
+    Восстанавливает граф из JSON-данных.
+
+    :param graph: Граф, который необходимо восстановить.
+    :param json_data: Строка в формате JSON, содержащая данные графа.
+    :return: None
+    """
     data = json.loads(json_data)
-    graph.clear_graph()  # Очищаем текущий граф перед загрузкой
-    
-    # Восстановление узлов
+    graph.clear_graph()
+
     for node in data["nodes"]:
         graph.create_node(
             node_id=node["id"],
             label=node["label"],
             color=node["color"],
-            position=tuple(node["position"])  # Передаем позицию узла как кортеж
+            position=tuple(node["position"])
         )
-    
-    # Восстановление рёбер
+
     for edge in data["edges"]:
         graph.create_edge(
             start=edge["start"],

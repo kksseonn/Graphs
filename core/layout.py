@@ -1,33 +1,34 @@
 # core/layout.py
 import networkx as nx
 import numpy as np
-import pygame
 
-def kamada_kawai_layout(graph):
+
+def kamada_kawai_layout(graph: nx.Graph) -> dict:
     """
     Рассчитывает расположение узлов по методу Камада-Кавай.
 
     :param graph: NetworkX-граф.
     :return: Словарь с координатами узлов.
+    :raises ValueError: Если граф некорректен или пуст.
     """
     if not isinstance(graph, nx.Graph):
         raise ValueError("Ожидался объект NetworkX Graph.")
-    
+
     if not graph.nodes:
         raise ValueError("Граф не содержит узлов.")
-    
+
     if not graph.edges:
         raise ValueError("Граф не содержит рёбер.")
 
-    # Получаем расположение узлов
     layout = nx.kamada_kawai_layout(graph)
-    
+
     if not layout:
         raise ValueError("Алгоритм Камада-Кавай не вернул расположение для узлов.")
-    
+
     return layout
 
-def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
+
+def force_directed_layout(graph: nx.Graph, iterations: int = 50, k: float = 1.0, gravity: float = 0.1) -> dict:
     """
     Рассчитывает расположение узлов по силовому методу.
 
@@ -36,6 +37,7 @@ def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
     :param k: Константа силы от соседей.
     :param gravity: Сила притяжения к центру.
     :return: Словарь с координатами узлов.
+    :raises ValueError: Если граф некорректен или пуст.
     """
     if not isinstance(graph, nx.Graph):
         raise ValueError("Ожидался объект NetworkX Graph.")
@@ -44,11 +46,10 @@ def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
     if not graph.edges:
         raise ValueError("Граф не содержит рёбер.")
 
-    # Инициализация начальных координат
     pos = {node: np.random.rand(2) for node in graph.nodes}
 
     for _ in range(iterations):
-        new_pos = {node: pos[node].copy() for node in graph.nodes}  # Копия для обновления
+        new_pos = {node: pos[node].copy() for node in graph.nodes}
 
         for node in graph.nodes:
             force = np.zeros(2)
@@ -57,7 +58,7 @@ def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
             for neighbor in graph.neighbors(node):
                 diff = pos[neighbor] - pos[node]
                 distance = max(np.linalg.norm(diff), 1e-9)
-                force += diff / distance  # Притяжение
+                force += diff / distance
 
             # Отталкивание от других узлов
             for other_node in graph.nodes:
@@ -65,7 +66,7 @@ def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
                     continue
                 diff = pos[node] - pos[other_node]
                 distance = max(np.linalg.norm(diff), 1e-9)
-                force += diff / (distance ** 2)  # Отталкивание
+                force += diff / (distance ** 2)
 
             # Гравитация
             force -= pos[node] * gravity
@@ -75,10 +76,8 @@ def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
             if np.linalg.norm(force) > max_force:
                 force = force / np.linalg.norm(force) * max_force
 
-            # Обновление координат
             new_pos[node] += force * k
 
-        # Центрирование графа
         center = np.mean(list(new_pos.values()), axis=0)
         for node in new_pos:
             new_pos[node] -= center
@@ -88,13 +87,13 @@ def force_directed_layout(graph, iterations=50, k=1.0, gravity=0.1):
     return pos
 
 
-
-def random_layout(graph):
+def random_layout(graph: nx.Graph) -> dict:
     """
     Случайное расположение узлов графа.
 
     :param graph: NetworkX-граф.
     :return: Словарь с координатами узлов.
+    :raises ValueError: Если граф некорректен или пуст.
     """
     if not isinstance(graph, nx.Graph):
         raise ValueError("Ожидался объект NetworkX Graph.")
@@ -104,7 +103,8 @@ def random_layout(graph):
 
     return nx.random_layout(graph)
 
-def spring_layout(graph, canvas):
+
+def spring_layout(graph: nx.Graph, canvas) -> None:
     """
     Реализует пружинный алгоритм для расположения узлов графа.
 
@@ -124,14 +124,14 @@ def spring_layout(graph, canvas):
         pos = np.random.random(2) * 0.8 * np.array([screen_w, screen_h]) + 0.1 * np.array([screen_w, screen_h])
         bodies.append({'id': node_id, 'pos': pos, 'vel': np.zeros(2)})
 
-    def edge_exists(body_a, body_b):
+    def edge_exists(body_a, body_b) -> bool:
         return graph.has_edge(body_a['id'], body_b['id'])
 
-    def unit(v):
+    def unit(v: np.ndarray) -> np.ndarray:
         norm = np.linalg.norm(v)
         return v / norm if norm > 1e-9 else np.zeros_like(v)
 
-    def update_body_physics(bods, dt):
+    def update_body_physics(bods, dt: float) -> None:
         for body_a in bods:
             f_net = np.zeros(2)
             for body_b in bods:
@@ -143,7 +143,7 @@ def spring_layout(graph, canvas):
                 f_c = const_charge * unit(ab) / _ab**2
                 f_net += f_s - f_c
             body_a['vel'] += f_net * dt
-            body_a['vel'] *= 0.99  # Снижение скорости
+            body_a['vel'] *= 0.99
             body_a['pos'] += body_a['vel'] * dt
             body_a['pos'] = np.clip(body_a['pos'], 0, [screen_w, screen_h])
 
