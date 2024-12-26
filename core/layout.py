@@ -6,10 +6,6 @@ import numpy as np
 def kamada_kawai_layout(graph: nx.Graph) -> dict:
     """
     Рассчитывает расположение узлов по методу Камада-Кавай.
-
-    :param graph: NetworkX-граф.
-    :return: Словарь с координатами узлов.
-    :raises ValueError: Если граф некорректен или пуст.
     """
     if not isinstance(graph, nx.Graph):
         raise ValueError("Ожидался объект NetworkX Graph.")
@@ -31,13 +27,6 @@ def kamada_kawai_layout(graph: nx.Graph) -> dict:
 def force_directed_layout(graph: nx.Graph, iterations: int = 50, k: float = 1.0, gravity: float = 0.1) -> dict:
     """
     Рассчитывает расположение узлов по силовому методу.
-
-    :param graph: NetworkX-граф.
-    :param iterations: Количество итераций для расчёта.
-    :param k: Константа силы от соседей.
-    :param gravity: Сила притяжения к центру.
-    :return: Словарь с координатами узлов.
-    :raises ValueError: Если граф некорректен или пуст.
     """
     if not isinstance(graph, nx.Graph):
         raise ValueError("Ожидался объект NetworkX Graph.")
@@ -54,13 +43,11 @@ def force_directed_layout(graph: nx.Graph, iterations: int = 50, k: float = 1.0,
         for node in graph.nodes:
             force = np.zeros(2)
 
-            # Притяжение соседей
             for neighbor in graph.neighbors(node):
                 diff = pos[neighbor] - pos[node]
                 distance = max(np.linalg.norm(diff), 1e-9)
                 force += diff / distance
 
-            # Отталкивание от других узлов
             for other_node in graph.nodes:
                 if other_node == node:
                     continue
@@ -68,10 +55,8 @@ def force_directed_layout(graph: nx.Graph, iterations: int = 50, k: float = 1.0,
                 distance = max(np.linalg.norm(diff), 1e-9)
                 force += diff / (distance ** 2)
 
-            # Гравитация
             force -= pos[node] * gravity
 
-            # Ограничение силы
             max_force = 10.0
             if np.linalg.norm(force) > max_force:
                 force = force / np.linalg.norm(force) * max_force
@@ -90,10 +75,6 @@ def force_directed_layout(graph: nx.Graph, iterations: int = 50, k: float = 1.0,
 def random_layout(graph: nx.Graph) -> dict:
     """
     Случайное расположение узлов графа.
-
-    :param graph: NetworkX-граф.
-    :return: Словарь с координатами узлов.
-    :raises ValueError: Если граф некорректен или пуст.
     """
     if not isinstance(graph, nx.Graph):
         raise ValueError("Ожидался объект NetworkX Graph.")
@@ -107,9 +88,6 @@ def random_layout(graph: nx.Graph) -> dict:
 def spring_layout(graph: nx.Graph, canvas) -> None:
     """
     Реализует пружинный алгоритм для расположения узлов графа.
-
-    :param graph: NetworkX граф.
-    :param canvas: Канвас для обновления позиции узлов.
     """
     screen_size = canvas.scene.width(), canvas.scene.height()
     screen_w, screen_h = screen_size

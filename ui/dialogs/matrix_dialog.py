@@ -7,20 +7,11 @@ from PyQt5.QtWidgets import (
 class MatrixDialog(QDialog):
     """
     Диалоговое окно для ввода матрицы весов графа.
-
-    Атрибуты:
-        node_count (int): Количество узлов в графе.
-        matrix (list[list[int]]): Матрица весов.
-        table (QTableWidget): Таблица для ввода данных.
-        ok_button (QPushButton): Кнопка для подтверждения ввода.
     """
 
     def __init__(self, node_count: int, parent=None):
         """
         Инициализация окна для ввода матрицы весов.
-
-        :param node_count: Количество узлов в графе.
-        :param parent: Родительский виджет (по умолчанию None).
         """
         super().__init__(parent)
         self.node_count = node_count
@@ -41,8 +32,6 @@ class MatrixDialog(QDialog):
     def process_input(self):
         """
         Обрабатывает ввод данных из таблицы и сохраняет в матрице.
-
-        Если данные введены некорректно, отображает сообщение об ошибке.
         """
         try:
             for i in range(self.node_count):
@@ -59,7 +48,5 @@ class MatrixDialog(QDialog):
     def get_matrix(self) -> list:
         """
         Возвращает матрицу весов после подтверждения.
-
-        :return: Матрица весов (список списков).
         """
         return self.matrix

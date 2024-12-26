@@ -10,21 +10,11 @@ from PyQt5.QtGui import QColor
 class NodeDialog(QDialog):
     """
     Диалоговое окно для добавления или редактирования узла графа.
-
-    Атрибуты:
-        label_input (QLineEdit): Поле ввода для метки узла.
-        color_button (QPushButton): Кнопка для выбора цвета узла.
-        random_color_button (QPushButton): Кнопка для генерации случайного цвета.
-        ok_button (QPushButton): Кнопка для подтверждения изменений.
-        cancel_button (QPushButton): Кнопка для отмены изменений.
-        color (str): Текущий цвет узла в формате HEX.
     """
 
     def __init__(self, parent=None):
         """
         Инициализация окна для добавления/редактирования узла.
-
-        :param parent: Родительский виджет (по умолчанию None).
         """
         super().__init__(parent)
         self.setWindowTitle("Добавить/Редактировать узел")
@@ -77,8 +67,6 @@ class NodeDialog(QDialog):
     def get_data(self) -> dict:
         """
         Возвращает данные из формы.
-
-        :return: Словарь с данными узла, включая ID, метку и цвет.
         """
         label = self.label_input.text().strip()
         return {

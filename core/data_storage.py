@@ -5,9 +5,6 @@ import json
 def serialize_graph(graph):
     """
     Сериализует граф в JSON-формат.
-
-    :param graph: Граф, который необходимо сериализовать.
-    :return: Строка в формате JSON, представляющая сериализованный граф.
     """
     nodes = []
     for node_id, data in graph.graph.nodes(data=True):
@@ -32,10 +29,6 @@ def serialize_graph(graph):
 def deserialize_graph(graph, json_data: str) -> None:
     """
     Восстанавливает граф из JSON-данных.
-
-    :param graph: Граф, который необходимо восстановить.
-    :param json_data: Строка в формате JSON, содержащая данные графа.
-    :return: None
     """
     data = json.loads(json_data)
     graph.clear_graph()
