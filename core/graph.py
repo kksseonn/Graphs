@@ -76,19 +76,19 @@ class Graph:
         :param matrix: Квадратная матрица весов. Значения 0 или '-' означают отсутствие ребра.
         :raises ValueError: Если матрица не является квадратной или содержит некорректные значения.
         """
-        if not matrix or not all(len(row) == len(matrix) for row in matrix):
-            raise ValueError("Матрица должна быть квадратной.")
-
         self.graph.clear()
+        logging.info("Граф очищен перед построением из матрицы.")
 
         for i in range(len(matrix)):
             self.graph.add_node(i, label=f"Узел {i}")
 
         for i, row in enumerate(matrix):
             for j, value in enumerate(row):
-                if value not in [0, "-"]:
+                if value not in [0, "-", "0"]:  # Допущение: строка "0" тоже отсутствие ребра.
                     try:
                         weight = float(value)
                         self.graph.add_edge(i, j, weight=weight)
+                        logging.debug(f"Ребро {i} -> {j} добавлено с весом {weight}.")
                     except ValueError:
+                        logging.error(f"Некорректное значение матрицы: {value} в позиции ({i}, {j}).")
                         raise ValueError(f"Некорректное значение матрицы: {value} в позиции ({i}, {j})")

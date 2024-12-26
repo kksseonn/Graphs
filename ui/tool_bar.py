@@ -1,6 +1,6 @@
 #ui/tool_bar.py
 from PyQt5.QtWidgets import QToolBar, QToolButton
-from PyQt5.QtCore import QSize  # Импортируем QSize
+from PyQt5.QtCore import QSize
 from PyQt5.QtCore import Qt
 
 class ToolBarCreator:

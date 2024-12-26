@@ -27,10 +27,11 @@ class Canvas(QGraphicsView):
         self.scale_factor = 1.1
         self.mst_edge_color = Qt.blue
         self.shortest_path_color = QColor(0, 255, 0)
+        
+        # Таймер обновления
         self.update_timer = QTimer(self)
-        self.update_timer.timeout.connect(self.viewport().update)
-        self.update_timer.start(20)  # Обновление каждые 20 мс
         self.update_timer.timeout.connect(self.update_graph)
+        self.update_timer.start(20)  # Обновление каждые 20 мс
 
         # Сцена и граф
         self.scene = QGraphicsScene(self)
@@ -45,7 +46,7 @@ class Canvas(QGraphicsView):
         self.offset = QPointF()
 
     # --- Методы для узлов ---
-    def create_node(self, node_id, label, color="blue", position=None):
+    def create_node(self, node_id: str, label: str, color: str = "blue", position: tuple[float, float] = None):
         """Создаёт новый узел на холсте."""
         if node_id in self.nodes:
             raise ValueError(f"Node with ID {node_id} already exists.")
@@ -59,7 +60,7 @@ class Canvas(QGraphicsView):
 
         # Создание графического узла
         radius = 20
-        x, y = position  # Используем переданную позицию
+        x, y = position
         ellipse = QGraphicsEllipseItem(x, y, radius * 2, radius * 2)
         ellipse.setBrush(QBrush(QColor(color)))
         ellipse.setFlag(QGraphicsEllipseItem.ItemIsMovable)
@@ -79,12 +80,18 @@ class Canvas(QGraphicsView):
         self.scene.addItem(ellipse)
         self.nodes[node_id] = (ellipse, text)
 
-        # Логирование позиции для отладки
-        print(f"Создан узел {node_id} с позицией {position}")
+        # Логирование для отладки
+        print(f"Node {node_id} created at position {position}")
     
-    def delete_node(self, node_id):
+    def delete_node(self, node_id: str):
+        """Удаляет узел и все связанные с ним рёбра."""
         if node_id not in self.nodes:
             return
+
+        # Удаление всех связанных рёбер
+        edges_to_delete = [edge_key for edge_key in self.edges if node_id in edge_key]
+        for edge_key in edges_to_delete:
+            self.delete_edge(*edge_key)
 
         # Удаление узла из NetworkX-графа
         self.graph.remove_node(node_id)
@@ -93,21 +100,20 @@ class Canvas(QGraphicsView):
         node, label = self.nodes.pop(node_id)
         self.scene.removeItem(node)
 
-        # Удаление всех связанных рёбер
-        for edge_key in list(self.edges.keys()):
-            if node_id in edge_key:
-                self.delete_edge(*edge_key)
 
-    def update_node_position(self, node_id):
+    def update_node_position(self, node_id: str):
         """Обновляет позицию узла в графе после его перемещения."""
+        if node_id not in self.nodes:
+            raise ValueError(f"Node {node_id} does not exist.")
+
         node = self.nodes[node_id][0]  # Получаем графический элемент узла
         position = node.pos()  # Получаем текущую позицию графического узла
         # Обновляем позицию в NetworkX графе
         self.graph.nodes[node_id]['position'] = (position.x(), position.y())
-        print(f"Позиция узла {node_id} обновлена на {position.x()}, {position.y()}")
+        print(f"Позиция узла {node_id} обновлена на ({position.x()}, {position.y()})")
 
-    # --- Методы для рёбер ---
-    def create_edge(self, start, end, weight=1):
+# --- Методы для рёбер ---
+    def create_edge(self, start: str, end: str, weight: int = 1):
         if not (start in self.nodes and end in self.nodes):
             raise ValueError("Both nodes must exist to create an edge.")
 
@@ -148,7 +154,7 @@ class Canvas(QGraphicsView):
         # Отладка
         print(f"Ребро между {start} и {end} с весом {weight} добавлено.")
 
-    def delete_edge(self, start, end):
+    def delete_edge(self, start: str, end: str):
         if not self.graph.has_edge(start, end):
             return
 
@@ -165,7 +171,7 @@ class Canvas(QGraphicsView):
         if label:
             self.scene.removeItem(label)
 
-    def update_edge_position(self, edge, start_node, end_node):
+    def update_edge_position(self, edge: QGraphicsLineItem, start_node: QGraphicsEllipseItem, end_node: QGraphicsEllipseItem):
         if isinstance(edge, QGraphicsLineItem):
             # Вычисление точек начала и конца ребра с учётом границы узлов
             start_center = start_node.scenePos() + start_node.rect().center()
@@ -182,7 +188,7 @@ class Canvas(QGraphicsView):
                 end_center.y() + end_offset.y()
             )
 
-    def update_edge_label_position(self, edge, label, start_node, end_node):
+    def update_edge_label_position(self, edge: QGraphicsLineItem, label: QGraphicsTextItem, start_node: QGraphicsEllipseItem, end_node: QGraphicsEllipseItem):
         if isinstance(edge, QGraphicsLineItem):
             line = edge.line()
             midpoint = QPointF(
@@ -197,28 +203,13 @@ class Canvas(QGraphicsView):
             end_node = self.nodes[end][0]
             self.update_edge_position(edge, start_node, end_node)
             self.update_edge_label_position(edge, self.edge_labels[(start, end)], start_node, end_node)
+
     def update_graph(self):
         """Метод, вызываемый таймером для обновления графа."""
         self.update_edges()
-        self.viewport().update()
+        self.scene.update()
+
     # --- Методы управления сценой ---
-    def mouseMoveEvent(self, event):
-        """
-        Обрабатывает перемещение мыши, обновляя позиции узлов, рёбер и меток рёбер.
-        """
-        if self.selected_node:
-            # Новая позиция узла
-            new_pos = self.mapToScene(event.pos()) - self.offset
-            self.selected_node.setPos(new_pos)
-
-            # Обновление позиций рёбер
-            self.update_edges()
-
-            # Принудительное обновление сцены
-            self.scene.update()
-
-        super().mouseMoveEvent(event)
-
     def mouseMoveEvent(self, event):
         """
         Обрабатывает перемещение мыши.
@@ -245,7 +236,6 @@ class Canvas(QGraphicsView):
 
         super().mouseMoveEvent(event)
 
-
     def mouseReleaseEvent(self, event):
         """
         Обрабатывает отпускание ЛКМ.
@@ -256,8 +246,8 @@ class Canvas(QGraphicsView):
 
     def sync_all_node_positions(self):
         """Синхронизирует позиции всех узлов в графе."""
-        for node_id, (node_item, _) in self.canvas.nodes.items():  # Обращение к узлам через canvas
-            self.canvas.update_node_position(node_id)
+        for node_id, (node_item, _) in self.nodes.items():
+            self.update_node_position(node_id)
 
     def select_node(self, node_item):
         for node, (ellipse, _) in self.nodes.items():
@@ -283,27 +273,10 @@ class Canvas(QGraphicsView):
     def move_node(self, node_id, x, y):
         if node_id not in self.nodes:
             raise ValueError(f"Узел с ID {node_id} не найден.")
-        print(f"Содержимое self.nodes[{node_id}]: {self.nodes[node_id]}")  # Перед вызовом node.setPos
-        node, _ = self.nodes[node_id][0]  # Проверяем, что это список или кортеж
-        print(f"Узел {node_id} представлен объектом: {node}, тип: {type(node)}")
-        node, _ = self.nodes[node_id][0]
-        print(f"Перемещение узла {node_id} в ({x}, {y})")  # Отладочное сообщение
+        node, _ = self.nodes[node_id]
         node.setPos(x, y)
         self.update_node_position(node_id)
         self.update_edges()  # Обновляем связанные рёбра
-
-    def zoom_in(self):
-        """Увеличивает масштаб холста."""
-        self.scale(self.scale_factor, self.scale_factor)
-
-    def zoom_out(self):
-        """Уменьшает масштаб холста."""
-        self.scale(1 / self.scale_factor, 1 / self.scale_factor)
-
-    def reset_view(self):
-        """Сбрасывает масштаб и центрирует вид."""
-        self.resetTransform()
-        self.centerOn(0, 0)
 
     def highlight_mst(self, mst_edges):
         """
@@ -313,22 +286,14 @@ class Canvas(QGraphicsView):
         self.clear_highlighted_paths()
         for edge in mst_edges:
             if isinstance(edge, tuple) and len(edge) == 3:
-                start, end, data = edge
+                start, end, _ = edge
                 # Проверяем, есть ли такое ребро в графе
                 if (start, end) in self.edges:
                     edge_item = self.edges[(start, end)]
-                    # Меняем цвет ребра на синий (или другой цвет для MST)
                     edge_item.setPen(QPen(self.mst_edge_color, self.edge_thickness))
-                    # Если есть метка для этого ребра, меняем её цвет
-                    # label = self.edge_labels.get((start, end))
-                    # if label:
-                    #     label.setDefaultTextColor(self.mst_edge_color)
                 elif (end, start) in self.edges:  # Проверка для ребра в другом порядке
                     edge_item = self.edges[(end, start)]
                     edge_item.setPen(QPen(self.mst_edge_color, self.edge_thickness))
-                    # label = self.edge_labels.get((end, start))
-                    # if label:
-                    #     label.setDefaultTextColor(self.mst_edge_color)
             else:
                 print(f"Некорректный элемент в mst_edges: {edge}")
 
@@ -337,31 +302,23 @@ class Canvas(QGraphicsView):
 
     def highlight_shortest_paths(self, distances, paths):
         self.clear_highlighted_paths()
-        print("Paths:", paths)
 
         for path in paths:
-            print(f"Highlighting path: {path}")
             for i in range(len(path) - 1):
                 start = path[i]
                 end = path[i + 1]
-                print(f"Highlighting edge from {start} to {end}")
 
                 edge = self.edges.get((start, end)) or self.edges.get((end, start))
-                
+
                 if edge:
-                    print(f"Edge found between {start} and {end}")
                     edge.setPen(QPen(self.shortest_path_color, self.edge_thickness * 2))  # Подсвечиваем ребро
-                else:
-                    print(f"Edge not found between {start} and {end}")
 
                 start_node, _ = self.nodes.get(start, (None, None))
                 end_node, _ = self.nodes.get(end, (None, None))
 
                 if start_node:
-                    print(f"Highlighting node {start}")
                     start_node.setBrush(QBrush(Qt.yellow))  # Подсвечиваем начальный узел
                 if end_node:
-                    print(f"Highlighting node {end}")
                     end_node.setBrush(QBrush(Qt.yellow))  # Подсвечиваем конечный узел
 
         self.repaint()  # Используем repaint для обновления сцены
@@ -378,22 +335,27 @@ class Canvas(QGraphicsView):
         self.repaint()  # Перерисовываем сцену
 
     def clear_graph(self):
-        """Очищаем граф на холсте."""
+        """Очищает весь граф и связанные элементы с холста."""
         # Удаляем все рёбра
         for edge in list(self.edges.values()):
-            self.scene.removeItem(edge)  # Удаляем ребра с сцены
+            self.scene.removeItem(edge)  # Удаляем рёбра с холста
 
         # Удаляем все метки веса рёбер
-        for edge, label in self.edge_labels.items():
-            self.scene.removeItem(label)  # Удаляем метку с сцены
+        for label in self.edge_labels.values():
+            self.scene.removeItem(label)  # Удаляем метки с холста
 
         # Удаляем все узлы
-        for node_id, (ellipse, _) in list(self.nodes.items()):
-            self.scene.removeItem(ellipse)  # Удаляем узлы с сцены
+        for node, (ellipse, _) in self.nodes.items():
+            self.scene.removeItem(ellipse)  # Удаляем узлы с холста
+
+        # Очищаем NetworkX-граф
+        self.graph.clear()
 
         # Очищаем внутренние структуры данных
         self.nodes.clear()
         self.edges.clear()
-        self.edge_labels.clear()  # Очистка меток веса рёбер
+        self.edge_labels.clear()
 
-        self.update()  # Обновляем холст
+        # Принудительное обновление холста
+        self.scene.update()
+
