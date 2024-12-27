@@ -8,21 +8,11 @@ from PyQt5.QtWidgets import (
 class EdgeDialog(QDialog):
     """
     Диалоговое окно для добавления или редактирования ребра графа.
-
-    Атрибуты:
-        start_node (QComboBox): Поле выбора начального узла.
-        end_node (QComboBox): Поле выбора конечного узла.
-        weight_input (QSpinBox): Поле ввода веса ребра.
-        ok_button (QPushButton): Кнопка подтверждения.
-        cancel_button (QPushButton): Кнопка отмены.
     """
 
     def __init__(self, nodes: list, parent=None):
         """
         Инициализация диалогового окна.
-
-        :param nodes: Список узлов графа для выбора.
-        :param parent: Родительский виджет.
         """
         super().__init__(parent)
         self.setWindowTitle("Добавить/Редактировать ребро")
@@ -59,11 +49,6 @@ class EdgeDialog(QDialog):
     def get_data(self) -> dict:
         """
         Возвращает данные, введенные в форму.
-
-        :return: Словарь с данными:
-            - start: Начальный узел.
-            - end: Конечный узел.
-            - weight: Вес ребра.
         """
         return {
             "start": self.start_node.currentText().strip(),
